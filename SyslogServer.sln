@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 15.0.27428.2043
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5A7856B1-EDDF-4A41-85B5-6575D6ABD205}"
+	ProjectSection(SolutionItems) = preProject
+		CreateDatabaseScript.sql = CreateDatabaseScript.sql
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VirventSysLogServer", "VirventSysLogServer\VirventSysLogServer.csproj", "{CC2D1B36-C0C4-4ADC-8DDF-513099028A60}"
 EndProject
