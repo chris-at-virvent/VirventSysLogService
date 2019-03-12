@@ -14,7 +14,7 @@ using System.Threading;
 using System.Timers;
 using VirventSysLogServerEngine;
 
-namespace SyslogServerTestHarness
+namespace VirventSysLogConsole
 {
     class VirventSysLog
     {

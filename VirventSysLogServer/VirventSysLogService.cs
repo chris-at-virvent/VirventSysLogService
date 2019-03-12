@@ -27,24 +27,28 @@ namespace VirventSysLogService
 
         protected override void OnStart(string[] args)
         {
-            Engine engine = new Engine();             
+            Engine engine = new Engine();
+            engine.LogApplicationActivity("Service Started Successfully");
             base.OnStart(args);
         }
 
         protected override void OnContinue()
         {
             Engine engine = new Engine();
+            engine.LogApplicationActivity("Service Resumed Successfully");
             base.OnContinue();
         }
 
         protected override void OnPause()
         {
+            engine.LogApplicationActivity("Service Paused - Logging Is Disabled", VirventSysLogLibrary.SysLogMessage.Severities.Warning, VirventSysLogLibrary.SysLogMessage.Facilities.log_alert);
             engine = null;
             base.OnPause();
         }
 
         protected override void OnStop()
         {
+            engine.LogApplicationActivity("Service Stopped - Logging Is Disabled", VirventSysLogLibrary.SysLogMessage.Severities.Emergency, VirventSysLogLibrary.SysLogMessage.Facilities.log_alert);
             engine = null;
             base.OnStop();
         }

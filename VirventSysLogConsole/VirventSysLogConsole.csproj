@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{750B79A7-A3BF-4185-B9B4-BD2BF4F15966}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>SyslogServerTestHarness</RootNamespace>
-    <AssemblyName>SyslogServerTestHarness</AssemblyName>
+    <RootNamespace>VirventSysLogConsole</RootNamespace>
+    <AssemblyName>VirventSysLogConsole</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -47,7 +47,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>SyslogServerTestHarness.VirventSysLog</StartupObject>
+    <StartupObject>VirventSysLogConsole.VirventSysLog</StartupObject>
   </PropertyGroup>
   <PropertyGroup>
     <SignManifests>false</SignManifests>

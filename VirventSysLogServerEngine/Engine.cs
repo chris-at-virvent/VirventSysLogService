@@ -192,6 +192,29 @@ namespace VirventSysLogServerEngine
             return;
         }
 
+        public void LogApplicationActivity(string msg, 
+            SysLogMessage.Severities severity = SysLogMessage.Severities.Informational,
+            SysLogMessage.Facilities facility = SysLogMessage.Facilities.log_audit)
+        {
+            SysLogMessage message = new SysLogMessage();
+            message.received = DateTime.Now;
+            message.senderIP = Library.GetLocalAddress().ToString();
+            message.sender = Library.GetLocalHost();
+            message.severity = SysLogMessage.Severities.Informational;
+            message.facility = SysLogMessage.Facilities.log_audit;
+            message.version = 1;
+            message.hostname = Library.GetLocalHost().HostName;
+            message.appName = "Virvent SysLog Service";
+            message.procID = "0";
+            message.timestamp = DateTime.Now;
+            message.msgID = "VIRVENT@32473";
+
+            message.prival = 6;
+            message.msg = msg;
+
+            message.ToSQL(dataConnection);
+        }
+
         public void TimerEvent(Object source, ElapsedEventArgs e)
         {
             processCheckCount += 1;
