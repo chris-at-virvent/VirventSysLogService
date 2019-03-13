@@ -15,32 +15,33 @@ using VirventSysLogServerEngine;
 namespace VirventSysLogService
 {
 
-    public partial class Service1 : ServiceBase
+    public partial class VirventSysLogService : ServiceBase
     {
 
-        public Engine engine;
+        public Engine engine = null;
 
-        public Service1()
+        public VirventSysLogService()
         {
-            InitializeComponent();
+            InitializeComponent();            
         }
-
+        
         protected override void OnStart(string[] args)
         {
-            Engine engine = new Engine();
+            engine = new Engine();            
             engine.LogApplicationActivity("Service Started Successfully");
             base.OnStart(args);
         }
 
         protected override void OnContinue()
         {
-            Engine engine = new Engine();
+            engine = new Engine();
             engine.LogApplicationActivity("Service Resumed Successfully");
             base.OnContinue();
         }
 
         protected override void OnPause()
         {
+            engine.LogToConsole("Stopping Service");
             engine.LogApplicationActivity("Service Paused - Logging Is Disabled", VirventSysLogLibrary.SysLogMessage.Severities.Warning, VirventSysLogLibrary.SysLogMessage.Facilities.log_alert);
             engine = null;
             base.OnPause();
@@ -48,9 +49,19 @@ namespace VirventSysLogService
 
         protected override void OnStop()
         {
+            engine.LogToConsole("Stopping Service");
             engine.LogApplicationActivity("Service Stopped - Logging Is Disabled", VirventSysLogLibrary.SysLogMessage.Severities.Emergency, VirventSysLogLibrary.SysLogMessage.Facilities.log_alert);
             engine = null;
             base.OnStop();
         }
-  }   
+
+        #region "Internals"
+
+        #endregion
+
+        private void bgEngineThread_DoWork(object sender, DoWorkEventArgs e)
+        {
+
+        }
+    }
 }

@@ -46,6 +46,7 @@ namespace VirventSysLogServerEngine
         {
             processCheckCount = 0;
 
+
             // load configuration file
             portNumber = int.Parse(ConfigurationManager.AppSettings["PortNumber"]);
             logLevel = (LogLevels)int.Parse(ConfigurationManager.AppSettings["LogLevel"]);
@@ -64,6 +65,7 @@ namespace VirventSysLogServerEngine
             processCheckInterval = int.Parse(ConfigurationManager.AppSettings["ProcessCheckInterval"]);
             processCheckFrequency = int.Parse(ConfigurationManager.AppSettings["ProcessCheckFrequency"]);
 
+            LogToConsole("Initalizing Virvent Syslog Service");
 
             // Do a check for the configured startup process
             systemTimer = new System.Timers.Timer(processCheckInterval * 1000);
@@ -71,6 +73,8 @@ namespace VirventSysLogServerEngine
             systemTimer.AutoReset = true;
             systemTimer.Enabled = true;
             systemTimer.Start();
+            LogToConsole("Process checked started");
+
 
             LogToConsole("Connecting to database server:\r\n" + connectionString);
             dataConnection = Data.GetConnection(connectionString);
@@ -94,13 +98,9 @@ namespace VirventSysLogServerEngine
 
             LogToConsole("Daemon initialized.");
             LogApplicationActivity("Virvent Syslog Server Initialized", SysLogMessage.Severities.Informational, SysLogMessage.Facilities.log_audit);
-            // loop here somehow so that the tcp listener stays open
-            while (true)
-            {
-
-            }
-
         }
+
+
 
         public void NewConnection(IAsyncResult ar)
         {
@@ -189,11 +189,12 @@ namespace VirventSysLogServerEngine
         {
             if (logLevel == LogLevels.Debug)
                 Console.WriteLine(message);
-
+            else
+                EventLog.WriteEntry(this.logSource, message, EventLogEntryType.Information);
             return;
         }
 
-        public void LogApplicationActivity(string msg, 
+        public void LogApplicationActivity(string msg,
             SysLogMessage.Severities severity = SysLogMessage.Severities.Informational,
             SysLogMessage.Facilities facility = SysLogMessage.Facilities.log_audit)
         {
@@ -213,7 +214,7 @@ namespace VirventSysLogServerEngine
             message.prival = 6;
             message.msg = msg;
 
-            Data.GenerateEntry(dataConnection, message);            
+            Data.GenerateEntry(dataConnection, message);
         }
 
         public void TimerEvent(Object source, ElapsedEventArgs e)
@@ -224,53 +225,66 @@ namespace VirventSysLogServerEngine
             {
                 processCheckCount = 0;
 
-                LogToConsole("Checking for " + processToCheck);
+                LogToConsole("Checking processes");
                 // Check that Snort is running
-                var i = ChildProcessChecker.CheckProcess(processToCheck);
-                if (i != null)
+                var checkedProcesses = ChildProcessChecker.CheckProcess();
+
+                LogToConsole("Found " + checkedProcesses.Count + " to validate");
+
+                if (checkedProcesses != null)
                 {
-                    LogToConsole(i.ProcessName + " running as " + i.Id);
-                    // Log the result
+                    foreach (var i in checkedProcesses)
+                    {
+                        if (i.ProcessIsRunning)
+                        {
+                            LogToConsole(i.Process.ProcessName + " running as " + i.Process.Id);
+                            // Log the result
 
-                    SysLogMessage message = new SysLogMessage();
-                    message.received = DateTime.Now;
-                    message.senderIP = Library.GetLocalAddress().ToString();
-                    message.sender = Library.GetLocalHost();
-                    message.severity = SysLogMessage.Severities.Informational;
-                    message.facility = SysLogMessage.Facilities.log_audit;
-                    message.version = 1;
-                    message.hostname = i.MachineName;
-                    message.appName = i.ProcessName;
-                    message.procID = i.Id.ToString();                                       
-                    message.timestamp = DateTime.Now;
-                    message.msgID = "VIRVENT@32473";
+                            SysLogMessage message = new SysLogMessage();
+                            message.received = DateTime.Now;
+                            message.senderIP = Library.GetLocalAddress().ToString();
+                            message.sender = Library.GetLocalHost();
+                            message.severity = SysLogMessage.Severities.Informational;
+                            message.facility = SysLogMessage.Facilities.log_audit;
+                            message.version = 1;
+                            message.hostname = i.Process.MachineName;
+                            message.appName = i.Process.ProcessName;
+                            message.procID = i.Process.Id.ToString();
+                            message.timestamp = DateTime.Now;
+                            message.msgID = "VIRVENT@32473";
 
-                    message.prival = 6;
-                    message.msg = i.ProcessName + " operational.";
+                            message.prival = 6;
+                            message.msg = i.Process.ProcessName + " operational.";
 
-                    Data.GenerateEntry(dataConnection, message);
+                            Data.GenerateEntry(dataConnection, message);
+                        }
+                        else
+                        {
+                            LogToConsole(i.ProcessToCheck + " not operational");
+
+                            SysLogMessage message = new SysLogMessage();
+                            message.received = DateTime.Now;
+                            message.senderIP = Library.GetLocalAddress().ToString();
+                            message.sender = Library.GetLocalHost();
+                            message.severity = SysLogMessage.Severities.Emergency;
+                            message.facility = SysLogMessage.Facilities.kernel_messages;
+                            message.version = 1;
+                            message.hostname = Library.GetLocalHost().HostName;
+                            message.appName = i.ProcessToCheck;
+                            message.procID = "0";
+                            message.timestamp = DateTime.Now;
+                            message.msgID = "VIRVENT@32473";
+
+                            message.prival = 6;
+                            message.msg = i.ProcessToCheck + " not loaded.";
+
+                            Data.GenerateEntry(dataConnection, message);
+                        }
+                    }
                 }
                 else
                 {
-                    LogToConsole(processToCheck + " not found!");
-
-                    SysLogMessage message = new SysLogMessage();
-                    message.received = DateTime.Now;
-                    message.senderIP = Library.GetLocalAddress().ToString();
-                    message.sender = Library.GetLocalHost();
-                    message.severity = SysLogMessage.Severities.Emergency;
-                    message.facility = SysLogMessage.Facilities.kernel_messages;
-                    message.version = 1;
-                    message.hostname = Library.GetLocalHost().HostName;
-                    message.appName = processToCheck;
-                    message.procID = "0";
-                    message.timestamp = DateTime.Now;
-                    message.msgID = "VIRVENT@32473";
-
-                    message.prival = 6;
-                    message.msg = processToCheck + " not loaded.";
-
-                    Data.GenerateEntry(dataConnection, message);
+                    LogToConsole("No processes to check. Engine Disabled.");
                 }
 
             }

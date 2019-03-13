@@ -1,6 +1,6 @@
 ﻿namespace VirventSysLogService
 {
-    partial class Service1
+    partial class VirventSysLogService
     {
         /// <summary> 
         /// Required designer variable.
@@ -28,22 +28,19 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.fileSystemWatcher1 = new System.IO.FileSystemWatcher();
-            ((System.ComponentModel.ISupportInitialize)(this.fileSystemWatcher1)).BeginInit();
+            this.bgEngineThread = new System.ComponentModel.BackgroundWorker();
             // 
-            // fileSystemWatcher1
+            // bgEngineThread
             // 
-            this.fileSystemWatcher1.EnableRaisingEvents = true;
+            this.bgEngineThread.DoWork += new System.ComponentModel.DoWorkEventHandler(this.bgEngineThread_DoWork);
             // 
-            // Service1
+            // VirventSysLogService
             // 
-            this.ServiceName = "VirventSysLog";
-            ((System.ComponentModel.ISupportInitialize)(this.fileSystemWatcher1)).EndInit();
-
+            this.ServiceName = "Virvent SysLog Server";
         }
 
         #endregion
 
-        private System.IO.FileSystemWatcher fileSystemWatcher1;
+        private System.ComponentModel.BackgroundWorker bgEngineThread;
     }
 }

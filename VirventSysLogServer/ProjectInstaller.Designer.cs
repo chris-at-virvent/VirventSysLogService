@@ -39,9 +39,9 @@
             // 
             // serviceInstaller1
             // 
-            this.serviceInstaller1.Description = "Syslog Server for Snort";
+            this.serviceInstaller1.Description = "Virvent Syslog Server for Snort";
             this.serviceInstaller1.DisplayName = "Virvent Syslog Server for Snort";
-            this.serviceInstaller1.ServiceName = "Syslog Server";
+            this.serviceInstaller1.ServiceName = "Virvent Syslog Server";
             // 
             // ProjectInstaller
             // 
