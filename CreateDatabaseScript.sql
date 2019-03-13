@@ -6,7 +6,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 -- =============================================
--- Author:		Laca
+-- Author:		Virvent, Inc.
 -- Create date: 
 -- Description:	
 -- =============================================
@@ -32,7 +32,7 @@ BEGIN
 	-- SET NOCOUNT ON added to prevent extra result sets from
 	-- interfering with SELECT statements.
 	SET NOCOUNT ON;
-INSERT INTO [SysLogDB].[dbo].[logs]
+INSERT INTO [dbo].[logs]
 		   ([timestamp]
            ,[sourceip]
            ,[sourcename]

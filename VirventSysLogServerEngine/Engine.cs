@@ -31,7 +31,7 @@ namespace VirventSysLogServerEngine
 
         // Configuration items
         public int portNumber;
-        private LogLevels logLevel;
+        public LogLevels logLevel;
         private string logSource;
         private string logto;
         public IPAddress listenOn;
@@ -72,6 +72,7 @@ namespace VirventSysLogServerEngine
             systemTimer.Enabled = true;
             systemTimer.Start();
 
+            LogToConsole("Connecting to database server:\r\n" + connectionString);
             dataConnection = Data.GetConnection(connectionString);
             if (dataConnection.State != ConnectionState.Open)
             {
@@ -92,7 +93,7 @@ namespace VirventSysLogServerEngine
             }
 
             LogToConsole("Daemon initialized.");
-
+            LogApplicationActivity("Virvent Syslog Server Initialized", SysLogMessage.Severities.Informational, SysLogMessage.Facilities.log_audit);
             // loop here somehow so that the tcp listener stays open
             while (true)
             {
@@ -177,7 +178,7 @@ namespace VirventSysLogServerEngine
             }
             else
             {
-                mymsg.ToSQL(dataConnection);
+                Data.GenerateEntry(dataConnection, mymsg);
             }
 
             LogToConsole("Message handled from " + sender.ToString() + ":\r\n" + rcvd);
@@ -212,7 +213,7 @@ namespace VirventSysLogServerEngine
             message.prival = 6;
             message.msg = msg;
 
-            message.ToSQL(dataConnection);
+            Data.GenerateEntry(dataConnection, message);            
         }
 
         public void TimerEvent(Object source, ElapsedEventArgs e)
@@ -247,7 +248,7 @@ namespace VirventSysLogServerEngine
                     message.prival = 6;
                     message.msg = i.ProcessName + " operational.";
 
-                    message.ToSQL(dataConnection);
+                    Data.GenerateEntry(dataConnection, message);
                 }
                 else
                 {
@@ -269,7 +270,7 @@ namespace VirventSysLogServerEngine
                     message.prival = 6;
                     message.msg = processToCheck + " not loaded.";
 
-                    message.ToSQL(dataConnection);
+                    Data.GenerateEntry(dataConnection, message);
                 }
 
             }

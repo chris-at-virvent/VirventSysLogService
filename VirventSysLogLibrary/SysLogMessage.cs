@@ -323,68 +323,6 @@ namespace VirventSysLogLibrary
                 Msg = msg;
             }
         }
-
-        public void ToSQL(SqlConnection sqlconnect)
-        {
-            if (sqlconnect.State == ConnectionState.Open)
-            {
-                SqlCommand sqlCommand = new SqlCommand("", sqlconnect);
-                Int64 thissdid = 0;
-                if (SD != "-")
-                {
-                    foreach (DictionaryEntry de in sdParams)
-                    {
-                        string tsdid = ((string[])de.Key)[0];
-                        string tsdpn = ((string[])de.Key)[1];
-                        string tsdpv = (string)de.Value;
-                        if (thissdid == 0)
-                        {
-                            sqlCommand.CommandText = "NewSD";
-                            sqlCommand.CommandType = CommandType.StoredProcedure;
-                            sqlCommand.Parameters.Clear();
-                            sqlCommand.Parameters.AddWithValue("@sdid", tsdid);
-                            sqlCommand.Parameters.AddWithValue("@sdpn", tsdpn);
-                            sqlCommand.Parameters.AddWithValue("@sdpv", tsdpv);
-                            thissdid = (Int64)sqlCommand.ExecuteScalar();
-                        }
-                        else
-                        {
-                            sqlCommand.CommandText = "NextSD";
-                            sqlCommand.CommandType = CommandType.StoredProcedure;
-                            sqlCommand.Parameters.Clear();
-                            sqlCommand.Parameters.AddWithValue("@nsdid", thissdid);
-                            sqlCommand.Parameters.AddWithValue("@sdid", tsdid);
-                            sqlCommand.Parameters.AddWithValue("@sdpn", tsdpn);
-                            sqlCommand.Parameters.AddWithValue("@sdpv", tsdpv);
-                            sqlCommand.ExecuteScalar();
-                        }
-                    }
-                }
-                sqlCommand.CommandText = "NewLog";
-                sqlCommand.CommandType = CommandType.StoredProcedure;
-                sqlCommand.Parameters.Clear();
-                sqlCommand.Parameters.AddWithValue("@timestamp", received.UtcDateTime);
-                sqlCommand.Parameters.AddWithValue("@sourceip", senderIP);
-                sqlCommand.Parameters.AddWithValue("@sourcename", sender.HostName);
-                sqlCommand.Parameters.AddWithValue("@severity", severity);
-                sqlCommand.Parameters.AddWithValue("@facility", facility);
-                sqlCommand.Parameters.AddWithValue("@version", version);
-                sqlCommand.Parameters.AddWithValue("@hostname", hostname);
-                sqlCommand.Parameters.AddWithValue("@appname", appName);
-                sqlCommand.Parameters.AddWithValue("@procid", procID);
-                sqlCommand.Parameters.AddWithValue("@msgid", msgID);
-                sqlCommand.Parameters.AddWithValue("@msgtimestamp", timestamp.UtcDateTime);
-                sqlCommand.Parameters.AddWithValue("@msgoffset", timestamp.Offset.ToString());
-                if (thissdid == 0)
-                {
-                    sqlCommand.Parameters.AddWithValue("@sdid", null);
-                }
-                else
-                    sqlCommand.Parameters.AddWithValue("@sdid", thissdid);
-                sqlCommand.Parameters.AddWithValue("@msg", msg);
-                sqlCommand.ExecuteNonQuery();
-            }
-        }
     }
 
 }

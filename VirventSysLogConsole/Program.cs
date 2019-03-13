@@ -24,6 +24,9 @@ namespace VirventSysLogConsole
             Console.WriteLine("Initializing Server");
             Engine engine = new Engine();
 
+            // in console mode - automatically switch to debug logging levels
+            engine.logLevel = LogLevels.Debug;
+
             while(true)
             {
 
