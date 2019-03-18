@@ -29,7 +29,7 @@
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>2</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <ApplicationVersion>1.0.0.2</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>true</BootstrapperEnabled>
@@ -130,9 +130,9 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\VirventSysLogLibrary\VirventSysLogLibrary.csproj">
-      <Project>{a6dd0703-7c83-435c-9c98-e7967d65651d}</Project>
-      <Name>VirventSysLogLibrary</Name>
+    <ProjectReference Include="..\VirventPluginContract\VirventPluginContract.csproj">
+      <Project>{423b5303-be03-4de5-ad51-51893ff2a255}</Project>
+      <Name>VirventPluginContract</Name>
     </ProjectReference>
     <ProjectReference Include="..\VirventSysLogServerEngine\VirventSysLogServerEngine.csproj">
       <Project>{350ad3c5-d418-47cb-8850-e8ed62292636}</Project>

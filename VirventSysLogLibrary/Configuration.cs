@@ -9,10 +9,15 @@ namespace VirventSysLogLibrary.Configuration
 {
     public class ValueElement : ConfigurationElement
     {
-        [ConfigurationProperty("name", IsKey = true, IsRequired = true)]
-        public string Name
+        [ConfigurationProperty("key", IsKey = true, IsRequired = true)]
+        public string Key
         {
-            get { return (string)this["name"]; }
+            get { return (string)this["key"]; }
+        }
+        [ConfigurationProperty("value", IsKey = false, IsRequired = true)]
+        public string Value
+        {
+            get { return (string)this["value"]; }
         }
     }
 
@@ -26,7 +31,7 @@ namespace VirventSysLogLibrary.Configuration
 
         protected override object GetElementKey(ConfigurationElement element)
         {
-            return ((ValueElement)element).Name;
+            return ((ValueElement)element).Key;
         }
     }
 

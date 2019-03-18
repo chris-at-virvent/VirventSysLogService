@@ -1,52 +1,65 @@
-﻿using System;
+﻿using Nerdle.AutoConfig;
+using System;
 using System.Collections.Generic;
+using System.Configuration;
+using System.Data;
+using System.Data.SqlClient;
 using System.Diagnostics;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Timers;
-using System.Threading.Tasks;
-//using SyslogServer;
-using System.Data;
-using System.Data.SqlClient;
-using VirventSysLogLibrary;
-using System.Configuration;
+using VirventPluginContract;
+using VirventSysLogServerEngine.Configuration;
+using VirventSysLogServerEngine.Extensions;
+using VirventSysLogServerEngine.Helpers;
+using VirventSysLogServerEngine.ThreadHelpers;
 
 namespace VirventSysLogServerEngine
 {
+    /// <summary>
+    ///   <para>Main thread that the Virvent Syslog Service calls to run all monitoring and logging</para>
+    /// </summary>
     public class Engine
     {
         public static System.Timers.Timer systemTimer;
         public static readonly DateTime systemCheckTime = new DateTime(1900, 1, 1, 10, 02, 59);
 
+        private double timerLatency = 0;
+        private DateTime lastTimerEvent;
+
         public TcpListener server;
         public Socket tcpListener;
         public UdpClient udpListener;
 
-        private SqlConnection dataConnection;
+        public SqlConnection dataConnection;
 
-        private int processCheckCount;
+        public Dictionary<string, IPlugin> PluginDictionary;
+        public List<Plugin> Plugins;
+
 
         // Configuration items
         public int portNumber;
         public LogLevels logLevel;
-        private string logSource;
-        private string logto;
+        public string logSource;
+        public string logto;
         public IPAddress listenOn;
         private bool protoTCP;
         private bool protoUDP;
-        private string connectionString;
-        private string processToCheck;      // name of the child process to check
-        private int processCheckInterval;   // how often the timer should tick
-        private int processCheckFrequency;  // how often the timer should check
+        public string connectionString;
 
-        public Engine()
+        private string PluginDirectory;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Engine"/> class.
+        /// and processes the startup routine
+        /// </summary>
+        public Engine(
+            bool StartEngine = true,
+            bool StartTimer = true
+            )
         {
-            processCheckCount = 0;
-
-
             // load configuration file
             portNumber = int.Parse(ConfigurationManager.AppSettings["PortNumber"]);
             logLevel = (LogLevels)int.Parse(ConfigurationManager.AppSettings["LogLevel"]);
@@ -60,49 +73,106 @@ namespace VirventSysLogServerEngine
 
             connectionString = ConfigurationManager.ConnectionStrings["SysLogConnString"].ConnectionString;
 
-            // set the timer vars
-            processToCheck = ConfigurationManager.AppSettings["ProcessToCheck"];
-            processCheckInterval = int.Parse(ConfigurationManager.AppSettings["ProcessCheckInterval"]);
-            processCheckFrequency = int.Parse(ConfigurationManager.AppSettings["ProcessCheckFrequency"]);
+            PluginDirectory = ConfigurationManager.AppSettings["PluginDirectory"];
+            if (PluginDirectory == "")
+                PluginDirectory = Environment.CurrentDirectory + "\\plugins";
+
 
             LogToConsole("Initalizing Virvent Syslog Service");
 
             // Do a check for the configured startup process
-            systemTimer = new System.Timers.Timer(processCheckInterval * 1000);
-            systemTimer.Elapsed += TimerEvent;
-            systemTimer.AutoReset = true;
-            systemTimer.Enabled = true;
-            systemTimer.Start();
-            LogToConsole("Process checked started");
 
+            // load plugin configurations
+            var pluginsConfig = AutoConfig.Map<IPluginConfiguration>();
 
-            LogToConsole("Connecting to database server:\r\n" + connectionString);
-            dataConnection = Data.GetConnection(connectionString);
-            if (dataConnection.State != ConnectionState.Open)
-            {
-                LogToConsole("Database connection is not Open! The state is: " + dataConnection.State.ToString() + "\r\nSending the message to EventLog");
-            }
+            // load plugins - pass the config file
+            Plugins = new List<Plugin>();
+            PluginDictionary = new Dictionary<string, IPlugin>();
+            ICollection<IPlugin> plugins = PluginManager.LoadPlugins(PluginDirectory);
 
-            if (protoUDP)
+            // assemble the plugin with it's configuration
+            foreach (var config in pluginsConfig.PluginSettings)
             {
-                udpListener = new UdpClient(new IPEndPoint(listenOn, portNumber));
-                udpListener.BeginReceive(new AsyncCallback(ReceiveCallBack), this);
-            }
-            if (protoTCP)
-            {
-                tcpListener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                tcpListener.Bind(new IPEndPoint(listenOn, portNumber));
-                tcpListener.Listen(10);
-                tcpListener.BeginAccept(new AsyncCallback(NewConnection), this);
+                // find the assembly
+                foreach (var i in plugins)
+                {
+                    if (i.Name == config.Name)
+                    {
+                        var thisPlugin = new Plugin()
+                        {
+                            Name = config.Name,
+                            Hours = config.Hours,
+                            Minutes = config.Minutes,
+                            Seconds = config.Seconds,
+                            TimeUntilEvent = (config.Hours * 60 * 60) + (config.Minutes * 60) + (config.Seconds),
+                            SecondsSinceLastEvent = 0,
+                            PluginAssembly = i,
+                            Settings = new List<PluginSetting>()
+                        };
+
+                        foreach (var setting in config.Settings)
+                        {
+                            thisPlugin.Settings.Add(new PluginSetting() { Key = setting.Key, Value = setting.Value });
+                        }
+                        Plugins.Add(thisPlugin);
+                        LogToConsole("Loaded " + thisPlugin.Name);
+                    }
+                }
             }
 
             LogToConsole("Daemon initialized.");
-            LogApplicationActivity("Virvent Syslog Server Initialized", SysLogMessage.Severities.Informational, SysLogMessage.Facilities.log_audit);
+            // LogApplicationActivity("Virvent Syslog Server Initialized", SysLogMessage.Severities.Informational, SysLogMessage.Facilities.log_audit);
+
+            if (StartEngine || StartTimer)
+                Start(StartEngine, StartTimer);
+
         }
 
+        public void Start(
+            bool StartEngine = true,
+            bool StartTimer = true)
+        {
+            if (StartTimer)
+            {
+                // start the timer on it's own thread
+                systemTimer = new System.Timers.Timer(1000);
+                systemTimer.Elapsed += ProcessCheckEvent;
+                systemTimer.AutoReset = true;
+                systemTimer.Enabled = true;
+                systemTimer.Start();
+                LogToConsole("Process checker started");
+            }
 
+            if (StartEngine)
+            {
 
-        public void NewConnection(IAsyncResult ar)
+                LogToConsole("Connecting to database server:\r\n" + connectionString);
+                dataConnection = Data.GetConnection(connectionString);
+                if (dataConnection.State != ConnectionState.Open)
+                {
+                    LogToConsole("Database connection is not Open! The state is: " + dataConnection.State.ToString() + "\r\nSending the message to EventLog");
+                }
+
+                if (protoUDP)
+                {
+                    udpListener = new UdpClient(new IPEndPoint(listenOn, portNumber));
+                    udpListener.BeginReceive(new AsyncCallback(UDPCallback), this);
+                }
+                if (protoTCP)
+                {
+                    tcpListener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                    tcpListener.Bind(new IPEndPoint(listenOn, portNumber));
+                    tcpListener.Listen(10);
+                    tcpListener.BeginAccept(new AsyncCallback(TCPConnection), this);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Handles new TCP connection.
+        /// </summary>
+        /// <param name="ar">IAsyncResult</param>
+        public void TCPConnection(IAsyncResult ar)
         {
             Engine thisService = (Engine)ar.AsyncState;
             thisService.LogToConsole("New TCP connection initiated.");
@@ -117,11 +187,13 @@ namespace VirventSysLogServerEngine
                 0,
                 StateObject.BufferSize,
                 0,
-                new AsyncCallback(ReadCallBack), state);
+                new AsyncCallback(TCPCallback), state);
             thisService.LogToConsole("Read call back configured.");
         }
 
-        public void ReceiveCallBack(IAsyncResult ar)
+        /// <summary>  UDP Callback handler</summary>
+        /// <param name="ar">IAsyncResult</param>
+        public void UDPCallback(IAsyncResult ar)
         {
             Engine thisService = (Engine)ar.AsyncState;
             thisService.LogToConsole("New UDP data receiving");
@@ -129,14 +201,16 @@ namespace VirventSysLogServerEngine
             byte[] bytes = thisService.udpListener.Receive(ref groupEP);
             thisService.LogToConsole("UDP Data received: " + bytes.Length.ToString() + "byte from " +
                 groupEP.Address.ToString() + ":" + groupEP.Port.ToString());
-            thisService.udpListener.BeginReceive(new AsyncCallback(ReceiveCallBack), thisService);
+            thisService.udpListener.BeginReceive(new AsyncCallback(UDPCallback), thisService);
             thisService.LogToConsole("New UDP listener process configured.");
             string rcvd = Encoding.ASCII.GetString(bytes, 0, bytes.Length);
             thisService.LogToConsole("UDP received:\r\n" + rcvd);
-            thisService.HandleMsg(rcvd, groupEP.Address);
+            thisService.LogToDatabase(rcvd, groupEP.Address);
         }
 
-        public void ReadCallBack(IAsyncResult ar)
+        /// <summary>  TCP Callback handler</summary>
+        /// <param name="ar">IAsyncResult</param>
+        public void TCPCallback(IAsyncResult ar)
         {
             StateObject state = (StateObject)ar.AsyncState;
             Engine thisService = (Engine)state.WorkSocket;
@@ -147,7 +221,7 @@ namespace VirventSysLogServerEngine
             {
                 state.sb.Append(Encoding.ASCII.GetString(state.buffer, 0, read));
                 handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
-                    new AsyncCallback(ReadCallBack), state);
+                    new AsyncCallback(TCPCallback), state);
             }
             else
             {
@@ -156,35 +230,46 @@ namespace VirventSysLogServerEngine
                     thisService.LogToConsole("TCP: All the data has been read from the client:" +
                         ((System.Net.IPEndPoint)handler.RemoteEndPoint).Address.ToString() + "\r\n" + state.sb.ToString());
                     string rcvd = state.sb.ToString();
-                    thisService.HandleMsg(rcvd, ((System.Net.IPEndPoint)handler.RemoteEndPoint).Address);
+                    thisService.LogToDatabase(rcvd, ((System.Net.IPEndPoint)handler.RemoteEndPoint).Address);
                 }
                 handler.Close();
             }
 
         }
 
-        public void HandleMsg(string rcvd, IPAddress sender)
+        /// <summary>Logs the Syslog message to database.</summary>
+        /// <param name="rcvd">  Message that was received from incoming transmission</param>
+        /// <param name="sender">The sender IPAddress</param>
+        public void LogToDatabase(string rcvd, IPAddress sender)
         {
-            LogToConsole("Start handling received data from " + sender.ToString() + "\r\n" + rcvd);
-            SysLogMessage mymsg = new SysLogMessage(rcvd);
-            mymsg.Sender = sender.ToString();
-            LogToConsole("SyslogMessage object created.");
-
-            dataConnection = Data.GetConnection(connectionString);
-
-            if (dataConnection.State != ConnectionState.Open)
+            if (logLevel != LogLevels.Debug)
             {
-                LogToConsole("Database connection is not Open! The state is: " + dataConnection.State.ToString() + "\r\nSending the message to EventLog");
-            }
-            else
-            {
-                Data.GenerateEntry(dataConnection, mymsg);
-            }
+                LogToConsole("Start handling received data from " + sender.ToString() + "\r\n" + rcvd);
+                SysLogMessage mymsg = new SysLogMessage(rcvd);
+                mymsg.Sender = sender.ToString();
+                LogToConsole("SyslogMessage object created.");
 
+                dataConnection = Data.GetConnection(connectionString);
+
+                if (dataConnection.State != ConnectionState.Open)
+                {
+                    LogToConsole("Database connection is not Open! The state is: " + dataConnection.State.ToString() + "\r\nSending the message to EventLog");
+                }
+                else
+                {
+                    Data.GenerateEntry(dataConnection, mymsg);
+                }
+            }
             LogToConsole("Message handled from " + sender.ToString() + ":\r\n" + rcvd);
 
         }
 
+        /// <summary>
+        ///   <para>
+        ///  Logs to console or event log.</para>
+        ///   <para>If running in debug mode - will log the output to the console.<br />If running in production mode - will log the output to the Windows Event Log.</para>
+        /// </summary>
+        /// <param name="message">The message to log.</param>
         public void LogToConsole(string message)
         {
             if (logLevel == LogLevels.Debug)
@@ -195,17 +280,18 @@ namespace VirventSysLogServerEngine
         }
 
         public void LogApplicationActivity(string msg,
-            SysLogMessage.Severities severity = SysLogMessage.Severities.Informational,
-            SysLogMessage.Facilities facility = SysLogMessage.Facilities.log_audit)
+            Severities severity,
+            Facilities facility,
+            SqlConnection dataConnection)
         {
             SysLogMessage message = new SysLogMessage();
             message.received = DateTime.Now;
-            message.senderIP = Library.GetLocalAddress().ToString();
-            message.sender = Library.GetLocalHost();
-            message.severity = SysLogMessage.Severities.Informational;
-            message.facility = SysLogMessage.Facilities.log_audit;
+            message.senderIP = IPHelpers.GetLocalAddress().ToString();
+            message.sender = IPHelpers.GetLocalHost();
+            message.severity = Severities.Informational;
+            message.facility = Facilities.log_audit;
             message.version = 1;
-            message.hostname = Library.GetLocalHost().HostName;
+            message.hostname = IPHelpers.GetLocalHost().HostName;
             message.appName = "Virvent SysLog Service";
             message.procID = "0";
             message.timestamp = DateTime.Now;
@@ -217,91 +303,162 @@ namespace VirventSysLogServerEngine
             Data.GenerateEntry(dataConnection, message);
         }
 
-        public void TimerEvent(Object source, ElapsedEventArgs e)
+        /// <summary>  Handles the ProcessCheck timer events</summary>
+        /// <param name="source">The source.</param>
+        /// <param name="e">The <see cref="ElapsedEventArgs"/> instance containing the event data.</param>
+        public void ProcessCheckEvent(Object source, ElapsedEventArgs e)
         {
-            processCheckCount += 1;
+            int countersToFix = 0;
 
-            if (processCheckCount == processCheckFrequency)
+            if (lastTimerEvent == new DateTime())
             {
-                processCheckCount = 0;
+                lastTimerEvent = DateTime.Now;
+            }
+            else
+            {
+                double currentLatency = DateTime.Now.Subtract(lastTimerEvent).TotalMilliseconds;
+                timerLatency += currentLatency;
 
-                LogToConsole("Checking processes");
-                // Check that Snort is running
-                var checkedProcesses = ChildProcessChecker.CheckProcess();
-
-                LogToConsole("Found " + checkedProcesses.Count + " to validate");
-
-                if (checkedProcesses != null)
+                //LogToConsole(currentLatency.ToString());
+                if (timerLatency > 10000)
                 {
-                    foreach (var i in checkedProcesses)
-                    {
-                        if (i.ProcessIsRunning)
-                        {
-                            LogToConsole(i.Process.ProcessName + " running as " + i.Process.Id);
-                            // Log the result
+                    var newcounters = (timerLatency - (timerLatency % 10000))/10000;
+                    countersToFix = int.Parse(newcounters.ToString());
+                    //LogToConsole("Timer: Adjusting clock by " + countersToFix + " ticks for latency of " + timerLatency);
+                    timerLatency = timerLatency - (10000*countersToFix);
+                }
 
-                            SysLogMessage message = new SysLogMessage();
-                            message.received = DateTime.Now;
-                            message.senderIP = Library.GetLocalAddress().ToString();
-                            message.sender = Library.GetLocalHost();
-                            message.severity = SysLogMessage.Severities.Informational;
-                            message.facility = SysLogMessage.Facilities.log_audit;
-                            message.version = 1;
-                            message.hostname = i.Process.MachineName;
-                            message.appName = i.Process.ProcessName;
-                            message.procID = i.Process.Id.ToString();
-                            message.timestamp = DateTime.Now;
-                            message.msgID = "VIRVENT@32473";
+                lastTimerEvent = DateTime.Now;
+            }
 
-                            message.prival = 6;
-                            message.msg = i.Process.ProcessName + " operational.";
+            //LogToConsole("Timer triggered : " + DateTime.Now.ToRfc3339String());
+            // check each plugin for settings
+            foreach (var plugin in Plugins)
+            {
+                if (countersToFix > 0)
+                    plugin.SecondsSinceLastEvent += countersToFix;
 
-                            Data.GenerateEntry(dataConnection, message);
-                        }
-                        else
-                        {
-                            LogToConsole(i.ProcessToCheck + " not operational");
+                if (plugin.SecondsSinceLastEvent > plugin.TimeUntilEvent)
+                {
+                    PluginMessage pluginMessage = new PluginMessage();
+                    var thisProc = new ProcessPluginThread(plugin, this);
 
-                            SysLogMessage message = new SysLogMessage();
-                            message.received = DateTime.Now;
-                            message.senderIP = Library.GetLocalAddress().ToString();
-                            message.sender = Library.GetLocalHost();
-                            message.severity = SysLogMessage.Severities.Emergency;
-                            message.facility = SysLogMessage.Facilities.kernel_messages;
-                            message.version = 1;
-                            message.hostname = Library.GetLocalHost().HostName;
-                            message.appName = i.ProcessToCheck;
-                            message.procID = "0";
-                            message.timestamp = DateTime.Now;
-                            message.msgID = "VIRVENT@32473";
+                    Thread thisThread = new Thread(
+                        new ThreadStart(
+                            thisProc.Process
+                        )
+                    );
 
-                            message.prival = 6;
-                            message.msg = i.ProcessToCheck + " not loaded.";
-
-                            Data.GenerateEntry(dataConnection, message);
-                        }
-                    }
+                    thisThread.Start();
+                    LogToConsole(" - Processing plugin event for :" + plugin.Name);
+                    //thisThread.Join();
+                    plugin.SecondsSinceLastEvent = 0;
                 }
                 else
                 {
-                    LogToConsole("No processes to check. Engine Disabled.");
+                    plugin.SecondsSinceLastEvent += 1;
                 }
-
             }
+
+            return;
         }
 
     }
 
-    // IETF RFC 5424 - PRI
-    public enum LogLevels
-    {
-        Emergency,
-        Alert,
-        Critical,
-        Error,
-        Warning,
-        Notice,
-        Informational,
-        Debug
-    }
+    //public class ProcessThread
+    //{
+    //    private Plugin Plugin;
+    //    public List<PluginMessage> PluginMessages;
+    //    private ProcessThreadCallback ProcessThreadCallback;
+    //    public ProcessThread(Plugin plugin, ProcessThreadCallback processThreadCallback)
+    //    {
+    //        Plugin = plugin;
+    //        PluginMessages = new List<PluginMessage>();
+    //        ProcessThreadCallback = processThreadCallback;
+    //    }
+
+    //    public void Process()
+    //    {
+    //        Plugin.PluginAssembly.Run(Plugin.Settings, out PluginMessages);
+    //        if (PluginMessages.Count != 0)
+    //            ProcessThreadCallback(PluginMessages);
+    //    }
+
+    //}
+
+    //public delegate void ProcessThreadCallback(List<PluginMessage> messages);
+
+
 }
+
+
+
+//processCheckCount += 1;
+
+//if (processCheckCount == processCheckFrequency)
+//{
+//    processCheckCount = 0;
+
+//    LogToConsole("Checking processes");
+//    // Check that Snort is running
+//    var checkedProcesses = ChildProcessChecker.CheckProcess();
+
+//    LogToConsole("Found " + checkedProcesses.Count + " to validate");
+
+//    if (checkedProcesses != null)
+//    {
+//        foreach (var i in checkedProcesses)
+//        {
+//            if (i.ProcessIsRunning)
+//            {
+//                LogToConsole(i.Process.ProcessName + " running as " + i.Process.Id);
+//                // Log the result
+
+//                SysLogMessage message = new SysLogMessage();
+//                message.received = DateTime.Now;
+//                message.senderIP = Library.GetLocalAddress().ToString();
+//                message.sender = Library.GetLocalHost();
+//                message.severity = SysLogMessage.Severities.Informational;
+//                message.facility = SysLogMessage.Facilities.log_audit;
+//                message.version = 1;
+//                message.hostname = i.Process.MachineName;
+//                message.appName = i.Process.ProcessName;
+//                message.procID = i.Process.Id.ToString();
+//                message.timestamp = DateTime.Now;
+//                message.msgID = "VIRVENT@32473";
+
+//                message.prival = 6;
+//                message.msg = i.Process.ProcessName + " operational.";
+
+//                Data.GenerateEntry(dataConnection, message);
+//            }
+//            else
+//            {
+//                LogToConsole(i.ProcessToCheck + " not operational");
+
+//                SysLogMessage message = new SysLogMessage();
+//                message.received = DateTime.Now;
+//                message.senderIP = Library.GetLocalAddress().ToString();
+//                message.sender = Library.GetLocalHost();
+//                message.severity = SysLogMessage.Severities.Emergency;
+//                message.facility = SysLogMessage.Facilities.kernel_messages;
+//                message.version = 1;
+//                message.hostname = Library.GetLocalHost().HostName;
+//                message.appName = i.ProcessToCheck;
+//                message.procID = "0";
+//                message.timestamp = DateTime.Now;
+//                message.msgID = "VIRVENT@32473";
+
+//                message.prival = 6;
+//                message.msg = i.ProcessToCheck + " not loaded.";
+
+//                Data.GenerateEntry(dataConnection, message);
+//            }
+//        }
+//    }
+//    else
+//    {
+//        LogToConsole("No processes to check. Engine Disabled.");
+//    }
+
+//}

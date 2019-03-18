@@ -1,25 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
+using VirventPluginContract;
 
-namespace VirventSysLogServerEngine
+namespace ProcessCheckerPlugin
 {
-    public class ChildProcessChecker
-    {      
-        public static List<ProcessesToCheck> CheckProcess()
+    public class CheckRunningProcesses
+    {
+        public static List<ProcessesToCheck> CheckProcess(List<PluginSetting> settings)
         {
             List<ProcessesToCheck> processesChecked = new List<ProcessesToCheck>();
             List<string> processesToCheck = new List<string>();
 
-            VirventSysLogLibrary.Configuration.MultipleValuesSection multipleValuesSection = (VirventSysLogLibrary.Configuration.MultipleValuesSection)ConfigurationManager.GetSection("ProcessesToMonitor");
-            foreach (VirventSysLogLibrary.Configuration.ValueElement item in multipleValuesSection.Values)
+            foreach (var item in settings)
             {
-                processesToCheck.Add(item.Name.ToLower());                
+                processesToCheck.Add(item.Key);
             }
+
 
             var processList = Process.GetProcesses();
             foreach (var i in processList)
@@ -27,7 +24,7 @@ namespace VirventSysLogServerEngine
                 if (processesToCheck.Contains(i.ProcessName.ToLower()))
                 {
                     processesToCheck.Remove(i.ProcessName.ToLower());
-                    processesChecked.Add(new ProcessesToCheck() { ProcessToCheck = i.ProcessName.ToLower(), ProcessIsRunning=true, Process = i });
+                    processesChecked.Add(new ProcessesToCheck() { ProcessToCheck = i.ProcessName.ToLower(), ProcessIsRunning = true, Process = i });
                 }
             }
 
@@ -41,6 +38,7 @@ namespace VirventSysLogServerEngine
 
             return processesChecked;
         }
+
     }
 
     public class ProcessesToCheck
@@ -49,4 +47,5 @@ namespace VirventSysLogServerEngine
         public bool ProcessIsRunning { get; set; }
         public Process Process { get; set; }
     }
+
 }

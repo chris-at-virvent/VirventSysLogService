@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using ICSharpCode.SharpZipLib.GZip;
+using ICSharpCode.SharpZipLib.Tar;
 
 namespace VirventSysLogLibrary
 {
@@ -28,5 +32,19 @@ namespace VirventSysLogLibrary
         {
             return Dns.GetHostEntry(Library.GetLocalAddress());
         }
+
+        public static void Unpack(string gzArchiveName, string destFolder)
+        {
+            Stream inStream = File.OpenRead(gzArchiveName);
+            Stream gzipStream = new GZipInputStream(inStream);
+
+            TarArchive tarArchive = TarArchive.CreateInputTarArchive(gzipStream);
+            tarArchive.ExtractContents(destFolder);
+            tarArchive.Close();
+
+            gzipStream.Close();
+            inStream.Close();
+        }
+
     }
 }

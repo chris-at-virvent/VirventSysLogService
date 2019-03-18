@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Win32;
 using System.Configuration;
 using VirventSysLogServerEngine;
+using VirventPluginContract;
 
 namespace VirventSysLogService
 {
@@ -28,21 +29,33 @@ namespace VirventSysLogService
         protected override void OnStart(string[] args)
         {
             engine = new Engine();            
-            engine.LogApplicationActivity("Service Started Successfully");
+            engine.LogApplicationActivity(
+                "Service Started Successfully",
+                Severities.Informational,
+                Facilities.log_audit,
+                engine.dataConnection);
             base.OnStart(args);
         }
 
         protected override void OnContinue()
         {
             engine = new Engine();
-            engine.LogApplicationActivity("Service Resumed Successfully");
+            engine.LogApplicationActivity(
+                "Service Resumed Successfully",
+                Severities.Informational,
+                Facilities.log_audit,
+                engine.dataConnection);
             base.OnContinue();
         }
 
         protected override void OnPause()
         {
             engine.LogToConsole("Stopping Service");
-            engine.LogApplicationActivity("Service Paused - Logging Is Disabled", VirventSysLogLibrary.SysLogMessage.Severities.Warning, VirventSysLogLibrary.SysLogMessage.Facilities.log_alert);
+            engine.LogApplicationActivity(
+                "Service Paused - Logging Is Disabled", 
+                Severities.Warning, 
+                Facilities.log_alert, 
+                engine.dataConnection);
             engine = null;
             base.OnPause();
         }
@@ -50,7 +63,11 @@ namespace VirventSysLogService
         protected override void OnStop()
         {
             engine.LogToConsole("Stopping Service");
-            engine.LogApplicationActivity("Service Stopped - Logging Is Disabled", VirventSysLogLibrary.SysLogMessage.Severities.Emergency, VirventSysLogLibrary.SysLogMessage.Facilities.log_alert);
+            engine.LogApplicationActivity(
+                "Service Stopped - Logging Is Disabled", 
+                Severities.Emergency, 
+                Facilities.log_alert, 
+                engine.dataConnection);
             engine = null;
             base.OnStop();
         }
