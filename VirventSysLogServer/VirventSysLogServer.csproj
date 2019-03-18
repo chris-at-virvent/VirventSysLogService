@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\ILMerge.3.0.21\build\ILMerge.props" Condition="Exists('..\packages\ILMerge.3.0.21\build\ILMerge.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -18,6 +19,8 @@
     <UpgradeBackupLocation />
     <TargetFrameworkProfile />
     <IsWebBootstrapper>false</IsWebBootstrapper>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -67,7 +70,13 @@
     <ManifestKeyFile>VirventSysLogServer_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <GenerateManifests>true</GenerateManifests>
+    <GenerateManifests>false</GenerateManifests>
+  </PropertyGroup>
+  <PropertyGroup>
+    <TargetZone>LocalIntranet</TargetZone>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>Properties\app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -107,6 +116,8 @@
     <None Include="App.config">
       <SubType>Designer</SubType>
     </None>
+    <None Include="packages.config" />
+    <None Include="Properties\app.manifest" />
     <None Include="VirventSysLogServer_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
@@ -140,11 +151,34 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\ILMerge.3.0.21\build\ILMerge.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ILMerge.3.0.21\build\ILMerge.props'))" />
   </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+<Target Name="AfterBuild" AfterTargets="Build">
+  <ItemGroup>
+	<MergeAssemblies Include="$(OutputPath)\VirventSysLogServer.exe" />
+    <MergeAssemblies Include="$(OutputPath)\Nerdle.AutoConfig.dll" />
+	<MergeAssemblies Include="$(OutputPath)\VirventSysLogServerEngine.dll" />
+    <MergeAssemblies Include="$(OutputPath)\VirventPluginContract.dll" />
+  </ItemGroup>
+  <PropertyGroup>
+    <OutputAssembly>$(OutputPath)\VSLS.exe</OutputAssembly>
+    <Merger Condition="('$(OS)' == 'Windows_NT')">&quot;$(SolutionDir)\packages\ILMerge.3.0.21\tools\net452\ILMerge.exe&quot;</Merger>
+    <Merger Condition="('$(OS)' != 'Windows_NT')">mono --runtime=v4.0.30319 &quot;$(SolutionDir)\packages\ILRepack.1.25.0\tools\ILRepack.exe&quot;</Merger>
+  </PropertyGroup>
+  <Message Text="MERGING: @(MergeAssemblies->'%(Filename)') into $(OutputAssembly)" Importance="High" />
+  <Exec Command="$(Merger) /out:&quot;$(OutputAssembly)&quot; @(MergeAssemblies->'&quot;%(FullPath)&quot;', ' ')" />
+  <ItemGroup>
+    <PDBDelete Include="$(OutputPath)\VirventPluginContract.pdb" />
+    <PDBDelete Include="$(OutputPath)\VirventSysLogServer.pdb" />
+    <PDBDelete Include="$(OutputPath)\VirventSysLogServerEngine.pdb" />
+	<PDBDelete Include="$(OutputPath)\VSLS.pdb" />
+  </ItemGroup>
+  <Delete Files="@(MergeAssemblies)" />
+  <Delete Files="@(PDBDelete)" />
+  <Move SourceFiles="$(OutputPath)\VSLS.exe" DestinationFiles="$(OutputPath)\VirventSysLogServer.exe" />
+</Target> 
 </Project>
