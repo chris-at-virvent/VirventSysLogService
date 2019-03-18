@@ -65,22 +65,10 @@
   </Target>
 <Target Name="AfterBuild">
   <ItemGroup>
-    <MergeAssemblies Include="$(OutputPath)\ProcessCheckerPlugin.dll" />
-    <MergeAssemblies Include="$(OutputPath)\VirventPluginContract.dll" />
-  </ItemGroup>
-  <PropertyGroup>
-    <OutputAssembly>$(OutputPath)\VirventProcessChecker.dll</OutputAssembly>
-    <Merger Condition="('$(OS)' == 'Windows_NT')">&quot;$(SolutionDir)\packages\ILMerge.3.0.21\tools\net452\ILMerge.exe&quot;</Merger>
-    <Merger Condition="('$(OS)' != 'Windows_NT')">mono --runtime=v4.0.30319 &quot;$(SolutionDir)\packages\ILRepack.1.25.0\tools\ILRepack.exe&quot;</Merger>
-  </PropertyGroup>
-  <Message Text="MERGING: @(MergeAssemblies->'%(Filename)') into $(OutputAssembly)" Importance="High" />
-  <Exec Command="$(Merger) /out:&quot;$(OutputAssembly)&quot; @(MergeAssemblies->'&quot;%(FullPath)&quot;', ' ')" />
-  <ItemGroup>
     <PDBDelete Include="$(OutputPath)\ProcessCheckerPlugin.pdb" />
     <PDBDelete Include="$(OutputPath)\VirventPluginContract.pdb" />
-    <PDBDelete Include="$(OutputPath)\VirventProcessChecker.pdb" />
+    <PDBDelete Include="$(OutputPath)\VirventPluginContract.dll" />
   </ItemGroup>
-  <Delete Files="@(MergeAssemblies)" />
   <Delete Files="@(PDBDelete)" />
 </Target>  
 </Project>

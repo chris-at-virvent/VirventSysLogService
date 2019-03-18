@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using VirventPluginContract;
@@ -14,14 +15,32 @@ namespace VirventSysLogServerEngine
             string[] dllFileNames = null;
             if (Directory.Exists(path))
             {
-                dllFileNames = Directory.GetFiles(path, "*.dll");
+                try
+                {
+                    dllFileNames = Directory.GetFiles(path, "*.dll");
+                }
+                catch (Exception ex)
+                {
+                    EventLog.WriteEntry("Virvent Syslog Server", ex.Message + "\r\n" + ex.StackTrace);
+                }
 
                 ICollection<Assembly> assemblies = new List<Assembly>(dllFileNames.Length);
                 foreach (string dllFile in dllFileNames)
                 {
-                    AssemblyName an = AssemblyName.GetAssemblyName(dllFile);
-                    Assembly assembly = Assembly.Load(an);
-                    assemblies.Add(assembly);
+                    try
+                    {
+                        AssemblyName an = AssemblyName.GetAssemblyName(dllFile);
+                        Assembly assembly = Assembly.Load(an);
+                        assemblies.Add(assembly);
+                    }
+                    catch (System.Reflection.ReflectionTypeLoadException ex)
+                    {
+                        EventLog.WriteEntry("Virvent Syslog Server", ex.Message + "\r\n" + ex.StackTrace, EventLogEntryType.Warning);
+                    }
+                    catch (Exception ex)
+                    {
+                        EventLog.WriteEntry("Virvent Syslog Server", ex.Message + "\r\n" + ex.StackTrace, EventLogEntryType.Warning);
+                    }
                 }
 
                 Type pluginType = typeof(IPlugin);
@@ -30,7 +49,27 @@ namespace VirventSysLogServerEngine
                 {
                     if (assembly != null)
                     {
-                        Type[] types = assembly.GetTypes();
+                        Type[] types = new Type[] { };
+
+                        try
+                        {
+                            types = assembly.GetTypes();
+                        }
+                        catch (System.Reflection.ReflectionTypeLoadException ex)
+                        {
+                            string exceptions = "";
+                            foreach (var i in ex.LoaderExceptions)
+                            {
+                                exceptions += i.Message + "\r\n" + i.InnerException + "\r\n\r\n" + i.StackTrace;
+                            }
+
+                            EventLog.WriteEntry("Virvent Syslog Server", exceptions + "\r\n" + ex.StackTrace, EventLogEntryType.Warning);
+                        }
+                        catch (Exception ex)
+                        {
+                            EventLog.WriteEntry("Virvent Syslog Server", ex.Message + "\r\n" + ex.StackTrace, EventLogEntryType.Warning);
+
+                        }
 
                         foreach (Type type in types)
                         {
@@ -40,9 +79,16 @@ namespace VirventSysLogServerEngine
                             }
                             else
                             {
-                                if (type.GetInterface(pluginType.FullName) != null)
+                                try
                                 {
-                                    pluginTypes.Add(type);
+                                    if (type.GetInterface(pluginType.FullName) != null)
+                                    {
+                                        pluginTypes.Add(type);
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    EventLog.WriteEntry("Virvent Syslog Server", ex.Message + "\r\n" + ex.StackTrace, EventLogEntryType.Warning);
                                 }
                             }
                         }
@@ -52,8 +98,20 @@ namespace VirventSysLogServerEngine
                 ICollection<IPlugin> plugins = new List<IPlugin>(pluginTypes.Count);
                 foreach (Type type in pluginTypes)
                 {
-                    IPlugin plugin = (IPlugin)Activator.CreateInstance(type);
-                    plugins.Add(plugin);
+                    try
+                    {
+                        IPlugin plugin = (IPlugin)Activator.CreateInstance(type);
+                        plugins.Add(plugin);
+                    }
+                    catch (System.Reflection.ReflectionTypeLoadException ex)
+                    {
+                        EventLog.WriteEntry("Virvent Syslog Server", ex.Message + "\r\n" + ex.StackTrace, EventLogEntryType.Warning);
+                    }
+                    catch (Exception ex)
+                    {
+                        EventLog.WriteEntry("Virvent Syslog Server", ex.Message + "\r\n" + ex.StackTrace, EventLogEntryType.Warning);
+
+                    }
                 }
 
                 return plugins;
@@ -73,7 +131,7 @@ namespace VirventSysLogServerEngine
         public long TimeUntilEvent { get; set; }
         public long SecondsSinceLastEvent { get; set; }
         public List<PluginSetting> Settings { get; set; }
-        public IPlugin PluginAssembly { get; set; }   
+        public IPlugin PluginAssembly { get; set; }
 
     }
 

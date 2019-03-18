@@ -28,7 +28,7 @@ namespace VirventSysLogService
         
         protected override void OnStart(string[] args)
         {
-            engine = new Engine();            
+            engine = new Engine(true, true);            
             engine.LogApplicationActivity(
                 "Service Started Successfully",
                 Severities.Informational,
@@ -39,7 +39,7 @@ namespace VirventSysLogService
 
         protected override void OnContinue()
         {
-            engine = new Engine();
+            engine = new Engine(true, true);
             engine.LogApplicationActivity(
                 "Service Resumed Successfully",
                 Severities.Informational,

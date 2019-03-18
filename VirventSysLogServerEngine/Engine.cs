@@ -76,19 +76,29 @@ namespace VirventSysLogServerEngine
             PluginDirectory = ConfigurationManager.AppSettings["PluginDirectory"];
             if (PluginDirectory == "")
                 PluginDirectory = Environment.CurrentDirectory + "\\plugins";
+            else if (!PluginDirectory.Contains(":"))
+                PluginDirectory = Environment.CurrentDirectory + PluginDirectory;
 
 
             LogToConsole("Initalizing Virvent Syslog Service");
-
+            LogToConsole("Plugin Directory: " + PluginDirectory);
             // Do a check for the configured startup process
 
             // load plugin configurations
+            LogToConsole("Loading plugin configurations");
             var pluginsConfig = AutoConfig.Map<IPluginConfiguration>();
 
             // load plugins - pass the config file
+            LogToConsole("Loading plugins");
             Plugins = new List<Plugin>();
             PluginDictionary = new Dictionary<string, IPlugin>();
             ICollection<IPlugin> plugins = PluginManager.LoadPlugins(PluginDirectory);
+            if (plugins.Count > 0)
+                LogToConsole("Found " + plugins.Count + " plugins.");
+
+
+            LogToConsole("Binding configurations to plugins.");
+
 
             // assemble the plugin with it's configuration
             foreach (var config in pluginsConfig.PluginSettings)
@@ -98,29 +108,37 @@ namespace VirventSysLogServerEngine
                 {
                     if (i.Name == config.Name)
                     {
-                        var thisPlugin = new Plugin()
-                        {
-                            Name = config.Name,
-                            Hours = config.Hours,
-                            Minutes = config.Minutes,
-                            Seconds = config.Seconds,
-                            TimeUntilEvent = (config.Hours * 60 * 60) + (config.Minutes * 60) + (config.Seconds),
-                            SecondsSinceLastEvent = 0,
-                            PluginAssembly = i,
-                            Settings = new List<PluginSetting>()
-                        };
+                        try {
+                            var thisPlugin = new Plugin()
+                            {
+                                Name = config.Name,
+                                Hours = config.Hours,
+                                Minutes = config.Minutes,
+                                Seconds = config.Seconds,
+                                TimeUntilEvent = (config.Hours * 60 * 60) + (config.Minutes * 60) + (config.Seconds),
+                                SecondsSinceLastEvent = 0,
+                                PluginAssembly = i,
+                                Settings = new List<PluginSetting>()
+                            };
 
-                        foreach (var setting in config.Settings)
-                        {
-                            thisPlugin.Settings.Add(new PluginSetting() { Key = setting.Key, Value = setting.Value });
+                            foreach (var setting in config.Settings)
+                            {
+                                thisPlugin.Settings.Add(new PluginSetting() { Key = setting.Key, Value = setting.Value });
+                            }
+                            Plugins.Add(thisPlugin);
+
+                            LogToConsole("PLUGIN MANAGER: Loaded " + thisPlugin.Name + " successfully.\r\nTimeUntilEvent: " +thisPlugin.TimeUntilEvent);
                         }
-                        Plugins.Add(thisPlugin);
-                        LogToConsole("Loaded " + thisPlugin.Name);
+                        catch (Exception ex)
+                        {
+                            LogToConsole("PLUGIN MANAGER: Error loading plugin: " + i.Name + "\r\n" + ex.Message + "\r\n" + ex.StackTrace);
+                        }
                     }
                 }
             }
 
-            LogToConsole("Daemon initialized.");
+
+            LogToConsole("Daemon initialized - starting engine.");
             // LogApplicationActivity("Virvent Syslog Server Initialized", SysLogMessage.Severities.Informational, SysLogMessage.Facilities.log_audit);
 
             if (StartEngine || StartTimer)
@@ -157,6 +175,8 @@ namespace VirventSysLogServerEngine
                 {
                     udpListener = new UdpClient(new IPEndPoint(listenOn, portNumber));
                     udpListener.BeginReceive(new AsyncCallback(UDPCallback), this);
+                    LogToConsole("UDP Listener open");
+
                 }
                 if (protoTCP)
                 {
@@ -164,8 +184,13 @@ namespace VirventSysLogServerEngine
                     tcpListener.Bind(new IPEndPoint(listenOn, portNumber));
                     tcpListener.Listen(10);
                     tcpListener.BeginAccept(new AsyncCallback(TCPConnection), this);
+                    LogToConsole("TCP Listener Open");
+
                 }
             }
+
+            LogToConsole("Engine Initialized.");
+
         }
 
         /// <summary>
