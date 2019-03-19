@@ -25,6 +25,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "URLRewritePlugin", "URLRewr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsFirewallAutoRulePlugin", "WindowsFirewallAutoRulePlugin\WindowsFirewallAutoRulePlugin.csproj", "{040577BC-BCC3-4CBE-BCA0-027B453FD0F5}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{751F2C05-ACFC-4C50-A602-378EA434E68B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		CD_ROM|Any CPU = CD_ROM|Any CPU
@@ -282,6 +284,12 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{8A816C59-243E-4E50-BFB6-7F611B886326} = {751F2C05-ACFC-4C50-A602-378EA434E68B}
+		{CFA5403F-39A1-4CE2-A8A1-360CC7F3B9A0} = {751F2C05-ACFC-4C50-A602-378EA434E68B}
+		{71B8AF7A-A025-4282-9805-D72820361DF6} = {751F2C05-ACFC-4C50-A602-378EA434E68B}
+		{040577BC-BCC3-4CBE-BCA0-027B453FD0F5} = {751F2C05-ACFC-4C50-A602-378EA434E68B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {60FB4AA2-95F1-43B5-A0A4-E85C07FA6291}
