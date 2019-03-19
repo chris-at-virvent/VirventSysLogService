@@ -1,0 +1,7 @@
+﻿<rule name="SNORT03-19-2019-T831" patternSyntax="Wildcard" stopProcessing="true">
+    <match url="*" />
+    <conditions>
+        <add input="{REMOTE_ADDR}" pattern="111.50.191.13" />
+    </conditions>
+    <action type="CustomResponse" statusCode="403" statusReason="Forbidden: Access is denied." statusDescription="You do not have permission to view this directory or page using the credentials that you supplied." />
+</rule>

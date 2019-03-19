@@ -108,13 +108,15 @@ namespace VirventSysLogServerEngine
                 {
                     if (i.Name == config.Name)
                     {
-                        try {
+                        try
+                        {
                             var thisPlugin = new Plugin()
                             {
                                 Name = config.Name,
                                 Hours = config.Hours,
                                 Minutes = config.Minutes,
                                 Seconds = config.Seconds,
+                                AfterStartup = config.AfterStartup,
                                 TimeUntilEvent = (config.Hours * 60 * 60) + (config.Minutes * 60) + (config.Seconds),
                                 SecondsSinceLastEvent = 0,
                                 PluginAssembly = i,
@@ -127,7 +129,7 @@ namespace VirventSysLogServerEngine
                             }
                             Plugins.Add(thisPlugin);
 
-                            LogToConsole("PLUGIN MANAGER: Loaded " + thisPlugin.Name + " successfully.\r\nTimeUntilEvent: " +thisPlugin.TimeUntilEvent);
+                            LogToConsole("PLUGIN MANAGER: Loaded " + thisPlugin.Name + " successfully.\r\nTimeUntilEvent: " + thisPlugin.TimeUntilEvent);
                         }
                         catch (Exception ex)
                         {
@@ -347,10 +349,10 @@ namespace VirventSysLogServerEngine
                 //LogToConsole(currentLatency.ToString());
                 if (timerLatency > 10000)
                 {
-                    var newcounters = (timerLatency - (timerLatency % 10000))/10000;
+                    var newcounters = (timerLatency - (timerLatency % 10000)) / 10000;
                     countersToFix = int.Parse(newcounters.ToString());
                     //LogToConsole("Timer: Adjusting clock by " + countersToFix + " ticks for latency of " + timerLatency);
-                    timerLatency = timerLatency - (10000*countersToFix);
+                    timerLatency = timerLatency - (10000 * countersToFix);
                 }
 
                 lastTimerEvent = DateTime.Now;
@@ -360,6 +362,12 @@ namespace VirventSysLogServerEngine
             // check each plugin for settings
             foreach (var plugin in Plugins)
             {
+                if (plugin.AfterStartup > 0)
+                {
+                    plugin.SecondsSinceLastEvent = plugin.TimeUntilEvent - plugin.AfterStartup + 1;
+                    plugin.AfterStartup = 0;
+                }
+
                 if (countersToFix > 0)
                     plugin.SecondsSinceLastEvent += countersToFix;
 

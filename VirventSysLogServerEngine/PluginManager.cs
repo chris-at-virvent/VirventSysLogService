@@ -128,6 +128,7 @@ namespace VirventSysLogServerEngine
         public int Hours { get; set; }
         public int Minutes { get; set; }
         public int Seconds { get; set; }
+        public int AfterStartup { get; set; }
         public long TimeUntilEvent { get; set; }
         public long SecondsSinceLastEvent { get; set; }
         public List<PluginSetting> Settings { get; set; }

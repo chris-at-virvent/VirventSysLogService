@@ -4,11 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SnortPlugin
+namespace WindowsFirewallAutoRulePlugin
 {
-    public interface IPlugin
+    public class Class1
     {
-        string Name { get; }
-        void Run();
     }
 }

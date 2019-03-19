@@ -42,6 +42,7 @@
             this.serviceInstaller1.Description = "Virvent Syslog Server for Snort";
             this.serviceInstaller1.DisplayName = "Virvent Syslog Server for Snort";
             this.serviceInstaller1.ServiceName = "Virvent Syslog Server";
+            this.serviceInstaller1.StartType = System.ServiceProcess.ServiceStartMode.Automatic;
             // 
             // ProjectInstaller
             // 
