@@ -9,10 +9,8 @@ namespace VirventSysLogConsole
 
         static void Main(string[] args)
         {
-
-
             Console.WriteLine("Initializing Server");
-            Engine engine = new Engine(true, true);
+            Engine engine = new Engine(false, true);
 
             // in console mode - automatically switch to debug logging levels
 

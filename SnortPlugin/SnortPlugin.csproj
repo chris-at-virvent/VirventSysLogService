@@ -47,7 +47,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Helpers\SettingsHelper.cs" />
     <Compile Include="SnortDefinitionDownloader.cs" />
     <Compile Include="SnortPlugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

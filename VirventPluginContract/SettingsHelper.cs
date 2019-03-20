@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace VirventPluginContract
 {
-    public class Settings
+    public class SettingsHelper
     {
         public static string GetSetting(List<PluginSetting> objSource, string key)
         {

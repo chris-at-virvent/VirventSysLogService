@@ -1,5 +1,4 @@
-﻿using SnortPlugin.Helpers;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using VirventPluginContract;
 
 namespace SnortPlugin

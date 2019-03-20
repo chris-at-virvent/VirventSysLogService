@@ -4,86 +4,45 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VirventPluginContract;
 
 namespace SOC2GitHubProcedureScheduler
 {
     public class SOC2GitHubProcedureScheduler
     {
+        public List<SOC2Procedure> procedures;
 
-    }
-
-    public class SOC2File
-    {
-        public string ID { get; set; }
-        public string Name { get; set; }
-        public int Years { get; set; }
-        public int Months { get; set; }
-        public int Days { get; set; }
-        public int Hours { get; set; }
-        public int Minutes { get; set; }
-        public int Seconds { get; set; }
-        public DateTime LastRun { get; set; }
-        public string Json { get; set; }
-        public string TaskBody { get; set; }
-
-        SOC2File() { }
-        SOC2File(string filename)
+        public void ProcessTasks(List<PluginSetting> Settings, out List<PluginMessage> pluginMessages)
         {
-            StreamReader reader = File.OpenText(filename);
-            while (!reader.EndOfStream)
-            {
-                string line = reader.ReadLine();
-                if (line.Contains("!!"))
-                {
-                    line = line.Substring(2, line.Length - 2);
-                    var lineData = line.Split(":".ToCharArray());
-                    if (lineData.Length != 3)
-                        break;
+            procedures = new List<SOC2Procedure>();
+            List<PluginMessage> responseMessages = new List<PluginMessage>();
+            // set the path and load all files
+            string[] templates = Directory.GetFiles(SettingsHelper.GetSetting(Settings, "ProcedureTemplateDirectory"));
+            string oAuthToken = SettingsHelper.GetSetting(Settings, "GitKey");
+            string repo = SettingsHelper.GetSetting(Settings, "Repo");
+            string gituser = SettingsHelper.GetSetting(Settings, "User");
 
-                    switch (lineData[1])
-                    {
-                        case "id":
-                            ID = lineData[2];
-                            break;
-                        case "name":
-                            Name = lineData[2];
-                            break;
-                        case "cron":
-                            ParseCronData(lineData[2]);
-                            break;
-                        case "lastrun":
-                            DateTime dateTime;
-                            bool parseResult = DateTime.TryParse(lineData[2], out dateTime);
-                            if (parseResult)
-                                LastRun = dateTime;
-                            else
-                                LastRun = DateTime.Now;
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                else if (line.Contains("$$"))
+            // iterate files
+            foreach (var template in templates)
+            {
+                procedures.Add(new SOC2Procedure(SettingsHelper.GetSetting(Settings, "ProcedureTemplateDirectory"), template));
+            }
+
+            // iterate templates
+            foreach (SOC2Procedure procedure in procedures)
+            {
+                if (procedure.Runnable())
                 {
-                    line = line.Substring(2, line.Length - 2);
-                    Json += line;
-                }
-                else
-                {
-                    TaskBody += line;
+                    // fire git integration to create the task
+                    GitHub.SendTaskToGit(oAuthToken, repo, gituser, procedure);
+                    // update last run date to now
+                    procedure.LastRun = DateTime.Now;
+                    // save task data
+                    procedure.Save();
                 }
             }
-        }
 
-        private void ParseCronData(string cronData)
-        {
-            var cronStrings = cronData.Split(" ".ToCharArray());
-            Years = int.Parse(cronStrings[0]);
-            Months = int.Parse(cronStrings[1]);
-            Days = int.Parse(cronStrings[2]);
-            Hours = int.Parse(cronStrings[3]);
-            Minutes = int.Parse(cronStrings[4]);
-            Seconds = int.Parse(cronStrings[5]);
+            pluginMessages = responseMessages;
         }
 
     }

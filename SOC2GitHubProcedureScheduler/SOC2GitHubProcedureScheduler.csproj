@@ -40,9 +40,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GitHub.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SOC2GitHubProcedureScheduler.cs" />
+    <Compile Include="SOC2Procedure.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="procedures\workstation.md" />

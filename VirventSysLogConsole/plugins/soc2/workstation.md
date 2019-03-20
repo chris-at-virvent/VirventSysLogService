@@ -1,20 +1,18 @@
-!!|id|Workstation Inventory
-!!|name|Workstation Inventory
-!!|cron|0 0 0 15 0 0
-!!|lastrun|1/20/2019 9:20:25 AM
+﻿
+!!:id:Workstation Inventory
+!!:name:Workstation Inventory
+!!:cron:0 0 0 15 0 0
+!!:lastrun:2019-01-01
 
 $$"issue": {
 $$"title": "Workstation Inventory",
-$$"body": "{{TaskBody}}",
+$$"body": "",
 $$"assignees": [
 $$    "chris-at-virvent"
 $$],
 $$"milestone": 1,
 $$"labels": "bi-weekly maintenance"
 $$}
-
-
-
 
 
 Resolve this ticket by executing the following steps:
@@ -52,5 +50,3 @@ The workstation inventory shall include the following fields:
     * Full disk encryption status
     * Malware protection status
 ```
-
-

@@ -9,11 +9,19 @@ namespace SOC2GitHubProcedureScheduler
 {
     public class Main : IPlugin
     {
-        public string Name => throw new NotImplementedException();
-
+        public string Name
+        {
+            get
+            {
+                return "SOC2GitHub";
+            }
+        }
         public void Run(List<PluginSetting> settings, out List<PluginMessage> messages)
         {
-            throw new NotImplementedException();
+            List<PluginMessage> pluginMessages = new List<PluginMessage>();
+            var proc = new SOC2GitHubProcedureScheduler();
+            proc.ProcessTasks(settings, out pluginMessages);
+            messages = pluginMessages;
         }
     }
 }

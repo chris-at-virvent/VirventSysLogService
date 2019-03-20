@@ -81,6 +81,7 @@
     <None Include="plugins\readme.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="plugins\soc2\workstation.md" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\VirventSysLogServerEngine\VirventSysLogServerEngine.csproj">
