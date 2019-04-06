@@ -10,16 +10,18 @@ namespace SOC2GitHubProcedureScheduler
     public class SOC2Procedure
     {
         public string FileName { get; set; }
-        public string ID { get; set; }
+
         public string Name { get; set; }
         public string Cron { get; set; }
+        public DateTime LastRun { get; set; }
+        public string MailTo { get; set; }
+
         public int Years { get; set; }
         public int Months { get; set; }
         public int Days { get; set; }
         public int Hours { get; set; }
         public int Minutes { get; set; }
         public int Seconds { get; set; }
-        public DateTime LastRun { get; set; }
         public List<string> RawJSON { get; set; }
         public string Json { get; set; }
         public string TaskBody { get; set; }
@@ -42,9 +44,6 @@ namespace SOC2GitHubProcedureScheduler
 
                     switch (lineData[1])
                     {
-                        case "id":
-                            ID = lineData[2];
-                            break;
                         case "name":
                             Name = lineData[2];
                             break;
@@ -87,7 +86,6 @@ namespace SOC2GitHubProcedureScheduler
         public bool Save()
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("!!|id|" + this.ID);
             sb.AppendLine("!!|name|" + this.Name);
             sb.AppendLine("!!|cron|" + this.Cron);
             sb.AppendLine("!!|lastrun|" + this.LastRun);

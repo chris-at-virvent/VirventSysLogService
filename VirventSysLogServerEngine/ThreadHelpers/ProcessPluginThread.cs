@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using VirventDataContract;
 using VirventPluginContract;
 
 namespace VirventSysLogServerEngine.ThreadHelpers
@@ -12,17 +9,19 @@ namespace VirventSysLogServerEngine.ThreadHelpers
         private Plugin Plugin;
         public List<PluginMessage> PluginMessages;
         private Engine Engine;
+        private Message Message;
 
-        public ProcessPluginThread(Plugin plugin, Engine engine)
+        public ProcessPluginThread(Plugin plugin, Engine engine, Message message)
         {
             Plugin = plugin;
             PluginMessages = new List<PluginMessage>();
             Engine = engine;
+            Message = message;
         }
 
         public void Process()
         {
-            Plugin.PluginAssembly.Run(Plugin.Settings, out PluginMessages);
+            Plugin.PluginAssembly.Run(Plugin.Settings, Message, out PluginMessages);
             if (PluginMessages.Count != 0)
             {
                 Engine.dataConnection = Data.GetConnection(Engine.connectionString);

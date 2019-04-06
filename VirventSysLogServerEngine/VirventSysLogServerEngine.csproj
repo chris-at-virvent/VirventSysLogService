@@ -51,7 +51,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration\IPluginConfig.cs" />
-    <Compile Include="Data.cs" />
     <Compile Include="Engine.cs" />
     <Compile Include="Extensions\DateTime.cs" />
     <Compile Include="FileSystemWatcher.cs" />
@@ -65,6 +64,10 @@
     <Compile Include="ThreadHelpers\ThreadDelegates.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\VirventDataContract\VirventDataContract.csproj">
+      <Project>{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}</Project>
+      <Name>VirventDataContract</Name>
+    </ProjectReference>
     <ProjectReference Include="..\VirventPluginContract\VirventPluginContract.csproj">
       <Project>{423B5303-BE03-4DE5-AD51-51893FF2A255}</Project>
       <Name>VirventPluginContract</Name>

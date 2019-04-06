@@ -10,9 +10,9 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Timers;
+using VirventDataContract;
 using VirventPluginContract;
 using VirventSysLogServerEngine.Configuration;
-using VirventSysLogServerEngine.Extensions;
 using VirventSysLogServerEngine.Helpers;
 using VirventSysLogServerEngine.ThreadHelpers;
 
@@ -60,19 +60,23 @@ namespace VirventSysLogServerEngine
             bool StartTimer = true
             )
         {
+            Console.WriteLine("Loading Configuration File");
             // load configuration file
             portNumber = int.Parse(ConfigurationManager.AppSettings["PortNumber"]);
             logLevel = (LogLevels)int.Parse(ConfigurationManager.AppSettings["LogLevel"]);
             logSource = ConfigurationManager.AppSettings["LogSource"];
             logto = ConfigurationManager.AppSettings["LogName"];
 
+            Console.WriteLine("Loading Listener Data");
             listenOn = IPAddress.Any;
             IPAddress.TryParse(ConfigurationManager.AppSettings["IPAddressToListen"], out listenOn);
             protoTCP = ((ConfigurationManager.AppSettings["Protocol"]).ToLower().Contains("tcp"));
             protoUDP = ((ConfigurationManager.AppSettings["Protocol"]).ToLower().Contains("udp"));
 
+            Console.WriteLine("Setting Connnection String");
             connectionString = ConfigurationManager.ConnectionStrings["SysLogConnString"].ConnectionString;
 
+            Console.WriteLine("Loading Plugin Configurations");
             PluginDirectory = ConfigurationManager.AppSettings["PluginDirectory"];
             if (PluginDirectory == "")
                 PluginDirectory = Environment.CurrentDirectory + "\\plugins";
@@ -117,8 +121,10 @@ namespace VirventSysLogServerEngine
                                 Minutes = config.Minutes,
                                 Seconds = config.Seconds,
                                 AfterStartup = config.AfterStartup,
+                                OnMessageEvent = config.OnMessageEvent,
                                 TimeUntilEvent = (config.Hours * 60 * 60) + (config.Minutes * 60) + (config.Seconds),
                                 SecondsSinceLastEvent = 0,
+                                ConnectionString = connectionString,
                                 PluginAssembly = i,
                                 Settings = new List<PluginSetting>()
                             };
@@ -127,6 +133,7 @@ namespace VirventSysLogServerEngine
                             {
                                 thisPlugin.Settings.Add(new PluginSetting() { Key = setting.Key, Value = setting.Value });
                             }
+                            thisPlugin.Settings.Add(new PluginSetting() { Key = "SysLogConnString", Value = connectionString });
                             Plugins.Add(thisPlugin);
 
                             LogToConsole("PLUGIN MANAGER: Loaded " + thisPlugin.Name + " successfully.\r\nTimeUntilEvent: " + thisPlugin.TimeUntilEvent);
@@ -233,6 +240,14 @@ namespace VirventSysLogServerEngine
             string rcvd = Encoding.ASCII.GetString(bytes, 0, bytes.Length);
             thisService.LogToConsole("UDP received:\r\n" + rcvd);
             thisService.LogToDatabase(rcvd, groupEP.Address);
+
+            foreach (var plugin in Plugins)
+            {
+                if (plugin.OnMessageEvent == 1)
+                {
+                    ExecutePlugin(plugin, new Message(rcvd));
+                }
+            }
         }
 
         /// <summary>  TCP Callback handler</summary>
@@ -258,10 +273,17 @@ namespace VirventSysLogServerEngine
                         ((System.Net.IPEndPoint)handler.RemoteEndPoint).Address.ToString() + "\r\n" + state.sb.ToString());
                     string rcvd = state.sb.ToString();
                     thisService.LogToDatabase(rcvd, ((System.Net.IPEndPoint)handler.RemoteEndPoint).Address);
+
+                    foreach (var plugin in Plugins)
+                    {
+                        if (plugin.OnMessageEvent == 1)
+                        {
+                            ExecutePlugin(plugin, new Message(rcvd));
+                        }
+                    }
                 }
                 handler.Close();
             }
-
         }
 
         /// <summary>Logs the Syslog message to database.</summary>
@@ -269,11 +291,12 @@ namespace VirventSysLogServerEngine
         /// <param name="sender">The sender IPAddress</param>
         public void LogToDatabase(string rcvd, IPAddress sender)
         {
-            if (logLevel != LogLevels.Debug)
-            {
+            //if (logLevel != LogLevels.Debug)
+            //{
                 LogToConsole("Start handling received data from " + sender.ToString() + "\r\n" + rcvd);
-                SysLogMessage mymsg = new SysLogMessage(rcvd);
-                mymsg.Sender = sender.ToString();
+                //SysLogMessage mymsg = new SysLogMessage(rcvd);
+                Message message = new Message(rcvd);
+                //message.Sender = sender.ToString();
                 LogToConsole("SyslogMessage object created.");
 
                 dataConnection = Data.GetConnection(connectionString);
@@ -284,10 +307,10 @@ namespace VirventSysLogServerEngine
                 }
                 else
                 {
-                    Data.GenerateEntry(dataConnection, mymsg);
+                    Data.GenerateEntry(dataConnection, message);
                 }
-            }
-            LogToConsole("Message handled from " + sender.ToString() + ":\r\n" + rcvd);
+            //}
+            //LogToConsole("Message handled from " + sender.ToString() + ":\r\n" + rcvd);
 
         }
 
@@ -311,21 +334,22 @@ namespace VirventSysLogServerEngine
             Facilities facility,
             SqlConnection dataConnection)
         {
-            SysLogMessage message = new SysLogMessage();
-            message.received = DateTime.Now;
-            message.senderIP = IPHelpers.GetLocalAddress().ToString();
-            message.sender = IPHelpers.GetLocalHost();
-            message.severity = Severities.Informational;
-            message.facility = Facilities.log_audit;
-            message.version = 1;
-            message.hostname = IPHelpers.GetLocalHost().HostName;
-            message.appName = "Virvent SysLog Service";
-            message.procID = "0";
-            message.timestamp = DateTime.Now;
-            message.msgID = "VIRVENT@32473";
+            Message message = new Message();
+            message.Received = DateTime.Now;
+            message.Sender = IPHelpers.GetLocalHost();
+            message.Severity = severity;
+            message.Facility = facility;
+            message.Version = 1;
+            message.AppName = "Virvent SysLog Service";
 
-            message.prival = 6;
-            message.msg = msg;
+            message.RuleData = "Syslog Message";
+            message.RuleMessage = msg;
+            message.Classification = "Notification";
+            message.Priority = "9";
+            message.SourceIP = IPHelpers.GetLocalAddress().ToString();
+            message.SourcePort = "";
+            message.DestIP = "";
+            message.DestPort = "";
 
             Data.GenerateEntry(dataConnection, message);
         }
@@ -362,6 +386,9 @@ namespace VirventSysLogServerEngine
             // check each plugin for settings
             foreach (var plugin in Plugins)
             {
+                if (plugin.OnMessageEvent == 1)
+                    break;
+
                 if (plugin.AfterStartup > 0)
                 {
                     plugin.SecondsSinceLastEvent = plugin.TimeUntilEvent - plugin.AfterStartup + 1;
@@ -373,18 +400,7 @@ namespace VirventSysLogServerEngine
 
                 if (plugin.SecondsSinceLastEvent > plugin.TimeUntilEvent)
                 {
-                    PluginMessage pluginMessage = new PluginMessage();
-                    var thisProc = new ProcessPluginThread(plugin, this);
-
-                    Thread thisThread = new Thread(
-                        new ThreadStart(
-                            thisProc.Process
-                        )
-                    );
-
-                    thisThread.Start();
-                    LogToConsole(" - Processing plugin event for :" + plugin.Name);
-                    //thisThread.Join();
+                    ExecutePlugin(plugin, new Message());
                     plugin.SecondsSinceLastEvent = 0;
                 }
                 else
@@ -394,6 +410,21 @@ namespace VirventSysLogServerEngine
             }
 
             return;
+        }
+
+        private void ExecutePlugin(Plugin plugin, Message message)
+        {
+            PluginMessage pluginMessage = new PluginMessage();
+            var thisProc = new ProcessPluginThread(plugin, this, message);
+
+            Thread thisThread = new Thread(
+                new ThreadStart(
+                    thisProc.Process
+                )
+            );
+
+            thisThread.Start();
+            LogToConsole(" - Processing plugin event for :" + plugin.Name);
         }
 
     }

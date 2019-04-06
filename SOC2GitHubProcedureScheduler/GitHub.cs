@@ -42,7 +42,6 @@ namespace SOC2GitHubProcedureScheduler
                 var objHttpWebResponse = (HttpWebResponse)httpWebRequest.GetResponse();
                 objHttpWebResponse.Close();
                 objHttpWebResponse.Dispose();
-
             }
             catch (Exception ex)
             {

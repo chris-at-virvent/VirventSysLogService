@@ -16,7 +16,7 @@ namespace SOC2GitHubProcedureScheduler
                 return "SOC2GitHub";
             }
         }
-        public void Run(List<PluginSetting> settings, out List<PluginMessage> messages)
+        public void Run(List<PluginSetting> settings, Message message, out List<PluginMessage> messages)
         {
             List<PluginMessage> pluginMessages = new List<PluginMessage>();
             var proc = new SOC2GitHubProcedureScheduler();

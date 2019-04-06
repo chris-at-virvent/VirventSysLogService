@@ -18,6 +18,7 @@ namespace VirventSysLogServerEngine.Configuration
         int Minutes { get; }
         int Seconds { get; }
         int AfterStartup { get; }
+        int OnMessageEvent { get; }
         IEnumerable<ISetting> Settings { get; }
 
     }

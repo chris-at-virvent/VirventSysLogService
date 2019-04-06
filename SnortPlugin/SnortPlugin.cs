@@ -15,7 +15,7 @@ namespace SnortPlugin
             }
         }
 
-        public void Run(List<PluginSetting> Settings, out List<PluginMessage> Responses)
+        public void Run(List<PluginSetting> Settings, Message message, out List<PluginMessage> Responses)
         {
             List<PluginMessage> responses = new List<PluginMessage>();
             List<PluginMessage> pluginMessages = new List<PluginMessage>();

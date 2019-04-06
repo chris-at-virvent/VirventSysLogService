@@ -29,6 +29,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{751F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOC2GitHubProcedureScheduler", "SOC2GitHubProcedureScheduler\SOC2GitHubProcedureScheduler.csproj", "{F152C362-B64D-4FEA-B696-D1E9517B8D71}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VirventDataContract", "VirventDataContract\VirventDataContract.csproj", "{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		CD_ROM|Any CPU = CD_ROM|Any CPU
@@ -313,6 +315,36 @@ Global
 		{F152C362-B64D-4FEA-B696-D1E9517B8D71}.SingleImage|Mixed Platforms.Build.0 = Release|Any CPU
 		{F152C362-B64D-4FEA-B696-D1E9517B8D71}.SingleImage|x86.ActiveCfg = Release|Any CPU
 		{F152C362-B64D-4FEA-B696-D1E9517B8D71}.SingleImage|x86.Build.0 = Release|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.CD_ROM|Any CPU.ActiveCfg = Release|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.CD_ROM|Any CPU.Build.0 = Release|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.CD_ROM|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.CD_ROM|Mixed Platforms.Build.0 = Release|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.CD_ROM|x86.ActiveCfg = Release|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.CD_ROM|x86.Build.0 = Release|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.Debug|x86.Build.0 = Debug|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.DVD-5|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.DVD-5|Any CPU.Build.0 = Debug|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.DVD-5|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.DVD-5|Mixed Platforms.Build.0 = Debug|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.DVD-5|x86.ActiveCfg = Debug|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.DVD-5|x86.Build.0 = Debug|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.Release|x86.ActiveCfg = Release|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.Release|x86.Build.0 = Release|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.SingleImage|Any CPU.ActiveCfg = Release|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.SingleImage|Any CPU.Build.0 = Release|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.SingleImage|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.SingleImage|Mixed Platforms.Build.0 = Release|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.SingleImage|x86.ActiveCfg = Release|Any CPU
+		{8C1C68DC-45F1-4411-9AC3-2A4D2E08AF11}.SingleImage|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

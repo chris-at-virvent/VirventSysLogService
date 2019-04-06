@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -129,8 +130,10 @@ namespace VirventSysLogServerEngine
         public int Minutes { get; set; }
         public int Seconds { get; set; }
         public int AfterStartup { get; set; }
+        public int OnMessageEvent { get; set; }
         public long TimeUntilEvent { get; set; }
         public long SecondsSinceLastEvent { get; set; }
+        public string ConnectionString { get; set; }
         public List<PluginSetting> Settings { get; set; }
         public IPlugin PluginAssembly { get; set; }
 

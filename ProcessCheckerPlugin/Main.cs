@@ -7,7 +7,7 @@ using VirventPluginContract;
 
 namespace ProcessCheckerPlugin
 {
-    public class Main : VirventPluginContract.IPlugin
+    public class Main : IPlugin
     {
         public string Name
         {
@@ -17,7 +17,7 @@ namespace ProcessCheckerPlugin
             }
         }
 
-        public void Run(List<PluginSetting> Settings, out List<PluginMessage> Responses)
+        public void Run(List<PluginSetting> Settings, Message message, out List<PluginMessage> Responses)
         {
             List<PluginMessage> pluginMessages = new List<PluginMessage>();
 
@@ -28,21 +28,21 @@ namespace ProcessCheckerPlugin
                 {
                     if (i.ProcessIsRunning)
                     {
-                        PluginMessage message = new PluginMessage();
-                        message.severity = Severities.Informational;
-                        message.facility = Facilities.log_audit;
-                        message.msg = i.Process.ProcessName + " operational.";
+                        PluginMessage pluginMessage = new PluginMessage();
+                        pluginMessage.severity = Severities.Informational;
+                        pluginMessage.facility = Facilities.log_audit;
+                        pluginMessage.msg = i.Process.ProcessName + " operational.";
 
-                        pluginMessages.Add(message);
+                        pluginMessages.Add(pluginMessage);
                     }
                     else
                     {
-                        PluginMessage message = new PluginMessage();
-                        message.severity = Severities.Emergency;
-                        message.facility = Facilities.kernel_messages;
-                        message.msg = i.ProcessToCheck + " not loaded.";
+                        PluginMessage pluginMessage = new PluginMessage();
+                        pluginMessage.severity = Severities.Emergency;
+                        pluginMessage.facility = Facilities.kernel_messages;
+                        pluginMessage.msg = i.ProcessToCheck + " not loaded.";
 
-                        pluginMessages.Add(message);
+                        pluginMessages.Add(pluginMessage);
                     }
                 }
             }
