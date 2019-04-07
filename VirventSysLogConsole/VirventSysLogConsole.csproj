@@ -108,4 +108,42 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\ILMerge.3.0.21\build\ILMerge.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ILMerge.3.0.21\build\ILMerge.props'))" />
   </Target>
+  <Target Name="AfterBuild" AfterTargets="Build">
+    <ItemGroup>
+      <MergeAssemblies Include="$(OutputPath)\VirventSysLogConsole.exe" />
+      <MergeAssemblies Include="$(OutputPath)\VirventSysLogServerEngine.dll" />
+    </ItemGroup>
+    <PropertyGroup>
+      <OutputAssembly>$(OutputPath)\VSLS.exe</OutputAssembly>
+      <Merger Condition="('$(OS)' == 'Windows_NT')">"$(SolutionDir)\packages\ILMerge.3.0.21\tools\net452\ILMerge.exe"</Merger>
+      <Merger Condition="('$(OS)' != 'Windows_NT')">mono --runtime=v4.0.30319 "$(SolutionDir)\packages\ILRepack.1.25.0\tools\ILRepack.exe"</Merger>
+    </PropertyGroup>
+    <Message Text="MERGING: @(MergeAssemblies->'%(Filename)') into $(OutputAssembly)" Importance="High" />
+    <Exec Command="$(Merger) /out:&quot;$(OutputAssembly)&quot; @(MergeAssemblies->'&quot;%(FullPath)&quot;', ' ')" />
+    <ItemGroup>
+	  <PDBDelete Include="$(OutputPath)\VirventSysLogConsole.pdb" />
+      <PDBDelete Include="$(OutputPath)\VirventPluginContract.pdb" />      
+      <PDBDelete Include="$(OutputPath)\VirventSysLogServerEngine.pdb" />
+	  <PDBDelete Include="$(OutputPath)\VirventDataContract.pdb" />
+      <PDBDelete Include="$(OutputPath)\VSLS.pdb" />
+    </ItemGroup>
+	<ItemGroup>
+	  <DefaultPlugins Include="..\ProcessCheckerPlugin\bin\Debug\ProcessCheckerPlugin.*" />
+	  <DefaultPlugins Include="..\SnortPlugin\bin\Debug\SnortPlugin.*" />
+	  <DefaultPlugins Include="..\SnortPlugin\bin\Debug\ICSharpCode.SharpZipLib.*" />
+	</ItemGroup>
+	<ItemGroup>
+	  <DebugPlugins Include="..\WindowsFirewallAutoRulePlugin\bin\Debug\WindowsFirewallAutoRulePlugin.*" />
+	  <DebugPlugins Include="..\SOC2GitHubProcedureScheduler\bin\Debug\SOC2GitHubProcedureScheduler.*" />	  
+	  <DebugPlugins Include="..\SOC2GitHubProcedureScheduler\bin\Debug\SOC2GitHubProcedureScheduler\soc2\.*" />	  
+	</ItemGroup>	
+	<Message Text="Deleting Assesemly Data" />
+    <Delete Files="@(MergeAssemblies)" />
+	<Message Text="Deleting Plugins" />
+	<Delete Files="$(OutputPath)\plugins\*" TreatErrorsAsWarnings="true" />
+    <!-- <Delete Files="@(PDBDelete)" /> -->
+    <Move SourceFiles="$(OutputPath)\VSLS.exe" DestinationFiles="$(OutputPath)\VirventSysLogConsole.exe" />
+	<Copy SourceFiles="@(DefaultPlugins)" DestinationFolder="$(OutputPath)\plugins" />
+	<Copy Condition=" '$(Configuration)' == 'Debug' " SourceFiles="@(DebugPlugins)" DestinationFolder="$(OutputPath)\plugins" />
+  </Target>   
 </Project>

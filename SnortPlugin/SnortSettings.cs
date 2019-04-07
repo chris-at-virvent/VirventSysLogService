@@ -16,5 +16,6 @@ namespace SnortPlugin
         public string SnortSubscrptionLevel { get; set; }
         public string OinkCode { get; set; }
         public List<string> ServiceEndpoints { get; set; }
+        public string BlackListURL { get; set; }
     }
 }
