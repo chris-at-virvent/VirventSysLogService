@@ -47,7 +47,9 @@
     <Compile Include="SOC2Procedure.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="procedures\workstation.md" />
+    <None Include="procedures\workstation.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\VirventPluginContract\VirventPluginContract.csproj">

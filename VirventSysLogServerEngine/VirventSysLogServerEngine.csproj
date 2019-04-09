@@ -58,10 +58,10 @@
     <Compile Include="PluginManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="StateObject.cs" />
-    <Compile Include="SysLogMessage.cs" />
     <Compile Include="ThreadHelpers\ProcessLoggingThread.cs" />
     <Compile Include="ThreadHelpers\ProcessPluginThread.cs" />
     <Compile Include="ThreadHelpers\ThreadDelegates.cs" />
+    <Compile Include="WhiteListHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\VirventDataContract\VirventDataContract.csproj">

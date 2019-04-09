@@ -8,10 +8,15 @@ using System.Threading.Tasks;
 
 namespace VirventPluginContract
 {
-    public interface IPlugin
+    public enum Severities
     {
-        string Name { get; }
-
-        void Run(List<PluginSetting> settings, Message message, out List<PluginMessage> messages);
+        Emergency,
+        Alert,
+        Critical,
+        Error,
+        Warning,
+        Notice,
+        Informational,
+        Debug
     }
 }

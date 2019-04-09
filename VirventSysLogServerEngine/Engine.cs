@@ -32,6 +32,7 @@ namespace VirventSysLogServerEngine
         public TcpListener server;
         public Socket tcpListener;
         public UdpClient udpListener;
+        public WhiteListHelper whiteList;
 
         public SqlConnection dataConnection;
 
@@ -50,6 +51,7 @@ namespace VirventSysLogServerEngine
         public string connectionString;
 
         private string PluginDirectory;
+        private Severities WhiteListSeverity;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Engine"/> class.
@@ -146,9 +148,11 @@ namespace VirventSysLogServerEngine
                 }
             }
 
+            LogToConsole("Getting WhiteList Entries");
+            whiteList = new WhiteListHelper(ConfigurationManager.AppSettings["WhitelistDirectory"]);
+            WhiteListSeverity = (Severities)int.Parse(ConfigurationManager.AppSettings["WhitelistPolicy"]);
 
-            LogToConsole("Daemon initialized - starting engine.");
-            // LogApplicationActivity("Virvent Syslog Server Initialized", SysLogMessage.Severities.Informational, SysLogMessage.Facilities.log_audit);
+            LogToConsole("Server initialized - starting engine.");
 
             if (StartEngine || StartTimer)
                 Start(StartEngine, StartTimer);
@@ -167,7 +171,7 @@ namespace VirventSysLogServerEngine
                 systemTimer.AutoReset = true;
                 systemTimer.Enabled = true;
                 systemTimer.Start();
-                LogToConsole("Process checker started");
+                LogToConsole("Plugin engine started");
             }
 
             if (StartEngine)
@@ -178,6 +182,10 @@ namespace VirventSysLogServerEngine
                 if (dataConnection.State != ConnectionState.Open)
                 {
                     LogToConsole("Database connection is not Open! The state is: " + dataConnection.State.ToString() + "\r\nSending the message to EventLog");
+                }
+                else
+                {
+                    LogToConsole("Database server connected.");
                 }
 
                 if (protoUDP)
@@ -198,8 +206,7 @@ namespace VirventSysLogServerEngine
                 }
             }
 
-            LogToConsole("Engine Initialized.");
-
+            LogToConsole("Engine Started.");
         }
 
         /// <summary>
@@ -239,8 +246,13 @@ namespace VirventSysLogServerEngine
             thisService.LogToConsole("New UDP listener process configured.");
             string rcvd = Encoding.ASCII.GetString(bytes, 0, bytes.Length);
             thisService.LogToConsole("UDP received:\r\n" + rcvd);
-            thisService.LogToDatabase(rcvd, groupEP.Address);
+            Message msg = new Message(rcvd);
 
+            if (whiteList.IsWhiteListed(msg.SourceIP))
+            {
+                msg.Severity = WhiteListSeverity;
+                msg.RuleMessage = "WHITELISTED: " + msg.RuleMessage;
+            }
             foreach (var plugin in Plugins)
             {
                 if (plugin.OnMessageEvent == 1)
@@ -248,6 +260,9 @@ namespace VirventSysLogServerEngine
                     ExecutePlugin(plugin, new Message(rcvd));
                 }
             }
+
+            thisService.LogToDatabase(msg, groupEP.Address);
+           
         }
 
         /// <summary>  TCP Callback handler</summary>
@@ -272,8 +287,13 @@ namespace VirventSysLogServerEngine
                     thisService.LogToConsole("TCP: All the data has been read from the client:" +
                         ((System.Net.IPEndPoint)handler.RemoteEndPoint).Address.ToString() + "\r\n" + state.sb.ToString());
                     string rcvd = state.sb.ToString();
-                    thisService.LogToDatabase(rcvd, ((System.Net.IPEndPoint)handler.RemoteEndPoint).Address);
+                    Message msg = new Message(rcvd);
 
+                    if (whiteList.IsWhiteListed(msg.SourceIP))
+                    {
+                        msg.Severity = WhiteListSeverity;
+                        msg.RuleMessage = "WHITELISTED: " + msg.RuleMessage;
+                    }
                     foreach (var plugin in Plugins)
                     {
                         if (plugin.OnMessageEvent == 1)
@@ -281,6 +301,9 @@ namespace VirventSysLogServerEngine
                             ExecutePlugin(plugin, new Message(rcvd));
                         }
                     }
+
+                    thisService.LogToDatabase(msg, ((System.Net.IPEndPoint)handler.RemoteEndPoint).Address);
+
                 }
                 handler.Close();
             }
@@ -289,28 +312,25 @@ namespace VirventSysLogServerEngine
         /// <summary>Logs the Syslog message to database.</summary>
         /// <param name="rcvd">  Message that was received from incoming transmission</param>
         /// <param name="sender">The sender IPAddress</param>
-        public void LogToDatabase(string rcvd, IPAddress sender)
+        public void LogToDatabase(Message rcvd, IPAddress sender)
         {
             //if (logLevel != LogLevels.Debug)
             //{
-                LogToConsole("Start handling received data from " + sender.ToString() + "\r\n" + rcvd);
-                //SysLogMessage mymsg = new SysLogMessage(rcvd);
-                Message message = new Message(rcvd);
-                //message.Sender = sender.ToString();
-                LogToConsole("SyslogMessage object created.");
+            LogToConsole("Start handling received data from " + sender.ToString());
+            //SysLogMessage mymsg = new SysLogMessage(rcvd);
+            //message.Sender = sender.ToString();
+            LogToConsole("SyslogMessage object created.");
 
-                dataConnection = Data.GetConnection(connectionString);
+            dataConnection = Data.GetConnection(connectionString);
 
-                if (dataConnection.State != ConnectionState.Open)
-                {
-                    LogToConsole("Database connection is not Open! The state is: " + dataConnection.State.ToString() + "\r\nSending the message to EventLog");
-                }
-                else
-                {
-                    Data.GenerateEntry(dataConnection, message);
-                }
-            //}
-            //LogToConsole("Message handled from " + sender.ToString() + ":\r\n" + rcvd);
+            if (dataConnection.State != ConnectionState.Open)
+            {
+                LogToConsole("Database connection is not Open! The state is: " + dataConnection.State.ToString() + "\r\nSending the message to EventLog");
+            }
+            else
+            {
+                Data.GenerateEntry(dataConnection, rcvd);
+            }
 
         }
 
@@ -428,101 +448,4 @@ namespace VirventSysLogServerEngine
         }
 
     }
-
-    //public class ProcessThread
-    //{
-    //    private Plugin Plugin;
-    //    public List<PluginMessage> PluginMessages;
-    //    private ProcessThreadCallback ProcessThreadCallback;
-    //    public ProcessThread(Plugin plugin, ProcessThreadCallback processThreadCallback)
-    //    {
-    //        Plugin = plugin;
-    //        PluginMessages = new List<PluginMessage>();
-    //        ProcessThreadCallback = processThreadCallback;
-    //    }
-
-    //    public void Process()
-    //    {
-    //        Plugin.PluginAssembly.Run(Plugin.Settings, out PluginMessages);
-    //        if (PluginMessages.Count != 0)
-    //            ProcessThreadCallback(PluginMessages);
-    //    }
-
-    //}
-
-    //public delegate void ProcessThreadCallback(List<PluginMessage> messages);
-
-
 }
-
-
-
-//processCheckCount += 1;
-
-//if (processCheckCount == processCheckFrequency)
-//{
-//    processCheckCount = 0;
-
-//    LogToConsole("Checking processes");
-//    // Check that Snort is running
-//    var checkedProcesses = ChildProcessChecker.CheckProcess();
-
-//    LogToConsole("Found " + checkedProcesses.Count + " to validate");
-
-//    if (checkedProcesses != null)
-//    {
-//        foreach (var i in checkedProcesses)
-//        {
-//            if (i.ProcessIsRunning)
-//            {
-//                LogToConsole(i.Process.ProcessName + " running as " + i.Process.Id);
-//                // Log the result
-
-//                SysLogMessage message = new SysLogMessage();
-//                message.received = DateTime.Now;
-//                message.senderIP = Library.GetLocalAddress().ToString();
-//                message.sender = Library.GetLocalHost();
-//                message.severity = SysLogMessage.Severities.Informational;
-//                message.facility = SysLogMessage.Facilities.log_audit;
-//                message.version = 1;
-//                message.hostname = i.Process.MachineName;
-//                message.appName = i.Process.ProcessName;
-//                message.procID = i.Process.Id.ToString();
-//                message.timestamp = DateTime.Now;
-//                message.msgID = "VIRVENT@32473";
-
-//                message.prival = 6;
-//                message.msg = i.Process.ProcessName + " operational.";
-
-//                Data.GenerateEntry(dataConnection, message);
-//            }
-//            else
-//            {
-//                LogToConsole(i.ProcessToCheck + " not operational");
-
-//                SysLogMessage message = new SysLogMessage();
-//                message.received = DateTime.Now;
-//                message.senderIP = Library.GetLocalAddress().ToString();
-//                message.sender = Library.GetLocalHost();
-//                message.severity = SysLogMessage.Severities.Emergency;
-//                message.facility = SysLogMessage.Facilities.kernel_messages;
-//                message.version = 1;
-//                message.hostname = Library.GetLocalHost().HostName;
-//                message.appName = i.ProcessToCheck;
-//                message.procID = "0";
-//                message.timestamp = DateTime.Now;
-//                message.msgID = "VIRVENT@32473";
-
-//                message.prival = 6;
-//                message.msg = i.ProcessToCheck + " not loaded.";
-
-//                Data.GenerateEntry(dataConnection, message);
-//            }
-//        }
-//    }
-//    else
-//    {
-//        LogToConsole("No processes to check. Engine Disabled.");
-//    }
-
-//}

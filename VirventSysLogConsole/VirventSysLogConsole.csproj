@@ -135,15 +135,16 @@
 	<ItemGroup>
 	  <DebugPlugins Include="..\WindowsFirewallAutoRulePlugin\bin\Debug\WindowsFirewallAutoRulePlugin.*" />
 	  <DebugPlugins Include="..\SOC2GitHubProcedureScheduler\bin\Debug\SOC2GitHubProcedureScheduler.*" />	  
-	  <DebugPlugins Include="..\SOC2GitHubProcedureScheduler\bin\Debug\SOC2GitHubProcedureScheduler\soc2\.*" />	  
 	</ItemGroup>	
-	<Message Text="Deleting Assesemly Data" />
+	<ItemGroup>
+	  <SOCTemplates Include="..\SOC2GitHubProcedureScheduler\bin\Debug\procedures\*" />	  
+	</ItemGroup>
     <Delete Files="@(MergeAssemblies)" />
-	<Message Text="Deleting Plugins" />
 	<Delete Files="$(OutputPath)\plugins\*" TreatErrorsAsWarnings="true" />
     <!-- <Delete Files="@(PDBDelete)" /> -->
     <Move SourceFiles="$(OutputPath)\VSLS.exe" DestinationFiles="$(OutputPath)\VirventSysLogConsole.exe" />
 	<Copy SourceFiles="@(DefaultPlugins)" DestinationFolder="$(OutputPath)\plugins" />
 	<Copy Condition=" '$(Configuration)' == 'Debug' " SourceFiles="@(DebugPlugins)" DestinationFolder="$(OutputPath)\plugins" />
+	<Copy Condition=" '$(Configuration)' == 'Debug' " SourceFiles="@(SOCTemplates)" DestinationFolder="$(OutputPath)\plugins\soc2" />
   </Target>   
 </Project>

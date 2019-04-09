@@ -60,15 +60,15 @@ namespace VirventDataContract
                 sqlCommand.Parameters.Clear();
 
                 sqlCommand.Parameters.AddWithValue("@Received", sysLogMessage.Received);
-                sqlCommand.Parameters.AddWithValue("@SenderIPAddress", sysLogMessage.Sender.HostName);
+                sqlCommand.Parameters.AddWithValue("@SenderIPAddress", sysLogMessage.Sender.HostName.Trim());
                 sqlCommand.Parameters.AddWithValue("@Severity", sysLogMessage.Severity);
                 sqlCommand.Parameters.AddWithValue("@Facility", sysLogMessage.Facility);
                 sqlCommand.Parameters.AddWithValue("@Version", sysLogMessage.Version);
                 sqlCommand.Parameters.AddWithValue("@Host", sysLogMessage.Host == null ? sysLogMessage.Sender.HostName : sysLogMessage.Host);
-                sqlCommand.Parameters.AddWithValue("@Application", sysLogMessage.AppName);
-                sqlCommand.Parameters.AddWithValue("@RuleMessage", sysLogMessage.RuleMessage);
-                sqlCommand.Parameters.AddWithValue("@RuleData", sysLogMessage.RuleData);
-                sqlCommand.Parameters.AddWithValue("@Classification", sysLogMessage.Classification);
+                sqlCommand.Parameters.AddWithValue("@Application", sysLogMessage.AppName.Trim());
+                sqlCommand.Parameters.AddWithValue("@RuleMessage", sysLogMessage.RuleMessage.Trim());
+                sqlCommand.Parameters.AddWithValue("@RuleData", sysLogMessage.RuleData.Trim());
+                sqlCommand.Parameters.AddWithValue("@Classification", sysLogMessage.Classification.Trim());
                 sqlCommand.Parameters.AddWithValue("@Priority", sysLogMessage.Priority);
                 sqlCommand.Parameters.AddWithValue("@SourceIP", sysLogMessage.SourceIP);
                 sqlCommand.Parameters.AddWithValue("@SourcePort", sysLogMessage.SourcePort);
@@ -101,7 +101,5 @@ namespace VirventDataContract
 
             return 0;
         }
-
     }
-
 }

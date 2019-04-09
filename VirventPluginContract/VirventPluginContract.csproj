@@ -44,9 +44,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Facilities.cs" />
     <Compile Include="IPlugin.cs" />
+    <Compile Include="LogLevels.cs" />
+    <Compile Include="Message.cs" />
+    <Compile Include="PluginMessage.cs" />
+    <Compile Include="PluginSetting.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SettingsHelper.cs" />
+    <Compile Include="Severities.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

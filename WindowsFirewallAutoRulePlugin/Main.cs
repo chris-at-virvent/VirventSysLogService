@@ -42,57 +42,34 @@ namespace WindowsFirewallAutoRulePlugin
             bool banAddress = false;
             if (message.Severity <= Threshold)
             {
-                if (Count == 0)
-                    banAddress = true;
-
-                if (!banAddress)
+                // if a rule exists - stop checking
+                if (!FirewallHandler.CheckForRule(message.SourceIP))
                 {
-                    SqlConnection connection = Data.GetConnection(SettingsHelper.GetSetting(Settings, "SysLogConnString"));
-                    int foundEntries = Data.GetEntries(connection, (int)message.Severity, message.Host,  message.SourceIP, message.Received.AddHours(Hours*-1).AddMinutes(Minutes*-1).AddSeconds(Seconds*-1));
-                    if (foundEntries >= Count)
+                    if (Count == 0)
                         banAddress = true;
-                }
 
-                if (banAddress)
-                    if (!FirewallHandler.CheckForRule(message.SourceIP))
+                    if (!banAddress)
                     {
-                        FirewallHandler.CreateBlockRule(message.SourceIP);
-                        PluginMessage pluginMessage = new PluginMessage();
-                        pluginMessage.severity = Severities.Informational;
-                        pluginMessage.facility = Facilities.log_audit;
-                        pluginMessage.msg = "Firewall -> AutoBan Block Rule Created For " + message.SourceIP;
-
-                        pluginMessages.Add(pluginMessage);
+                        SqlConnection connection = Data.GetConnection(SettingsHelper.GetSetting(Settings, "SysLogConnString"));
+                        int foundEntries = Data.GetEntries(connection, (int)message.Severity, message.Host, message.SourceIP, message.Received.AddHours(Hours * -1).AddMinutes(Minutes * -1).AddSeconds(Seconds * -1));
+                        if (foundEntries >= Count)
+                            banAddress = true;
                     }
+
+                    if (banAddress)
+                        if (!FirewallHandler.CheckForRule(message.SourceIP))
+                        {
+                            FirewallHandler.CreateBlockRule(message.SourceIP);
+                            PluginMessage pluginMessage = new PluginMessage();
+                            pluginMessage.severity = Severities.Informational;
+                            pluginMessage.facility = Facilities.log_audit;
+                            pluginMessage.msg = "Firewall -> AutoBan Block Rule Created For " + message.SourceIP;
+
+                            pluginMessages.Add(pluginMessage);
+                        }
+                }
             }
 
-            // if count > threshold, this is a block
-
-            //var checkedProcesses = CheckRunningProcesses.CheckProcess(Settings);
-            //if (checkedProcesses != null)
-            //{
-            //    foreach (var i in checkedProcesses)
-            //    {
-            //        if (i.ProcessIsRunning)
-            //        {
-            //            PluginMessage message = new PluginMessage();
-            //            message.severity = Severities.Informational;
-            //            message.facility = Facilities.log_audit;
-            //            message.msg = i.Process.ProcessName + " operational.";
-
-            //            pluginMessages.Add(message);
-            //        }
-            //        else
-            //        {
-            //            PluginMessage message = new PluginMessage();
-            //            message.severity = Severities.Emergency;
-            //            message.facility = Facilities.kernel_messages;
-            //            message.msg = i.ProcessToCheck + " not loaded.";
-
-            //            pluginMessages.Add(message);
-            //        }
-            //    }
-            //}
             Responses = pluginMessages;
         }
     }

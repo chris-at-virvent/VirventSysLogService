@@ -8,10 +8,16 @@ using System.Threading.Tasks;
 
 namespace VirventPluginContract
 {
-    public interface IPlugin
+    // IETF RFC 5424 - PRI
+    public enum LogLevels
     {
-        string Name { get; }
-
-        void Run(List<PluginSetting> settings, Message message, out List<PluginMessage> messages);
+        Emergency,
+        Alert,
+        Critical,
+        Error,
+        Warning,
+        Notice,
+        Informational,
+        Debug
     }
 }

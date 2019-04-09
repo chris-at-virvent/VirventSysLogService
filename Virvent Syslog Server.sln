@@ -26,6 +26,9 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsFirewallAutoRulePlugin", "WindowsFirewallAutoRulePlugin\WindowsFirewallAutoRulePlugin.csproj", "{040577BC-BCC3-4CBE-BCA0-027B453FD0F5}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{751F2C05-ACFC-4C50-A602-378EA434E68B}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\..\Documents\Visual Studio 2017\My Exported Templates\Virvent Syslog Server Plugin Project Template.zip = ..\..\..\Documents\Visual Studio 2017\My Exported Templates\Virvent Syslog Server Plugin Project Template.zip
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOC2GitHubProcedureScheduler", "SOC2GitHubProcedureScheduler\SOC2GitHubProcedureScheduler.csproj", "{F152C362-B64D-4FEA-B696-D1E9517B8D71}"
 EndProject
